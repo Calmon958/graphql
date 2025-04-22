@@ -1,0 +1,98 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "chart.js": "https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.esm.js"
+        }
+      }
+    </script>
+</head>
+<body>
+    <button id="logout-button" style="
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    box-shadow: var(--box-shadow);
+    z-index: 1000;
+">
+  Logout
+</button>
+
+    <div class="profile-container">
+        <!-- User Header Section -->
+        <header class="user-header card">
+             <img id="user-avatar" src="https://images.websim.ai/avatar/default" alt="User Avatar" class="avatar">
+             <div class="user-details">
+                <h1 id="user-fullname">User Fullname</h1>
+                <p id="user-username">@username</p>
+                <p id="user-description">Loading description...</p>
+                 <!-- Potential place for follow/edit buttons -->
+            </div>
+        </header>
+
+        <!-- Key Stats Section -->
+        <section class="key-stats">
+            <div class="stat-card card xp">
+                <h2>XP</h2>
+                <p><span id="xp-amount">15,780</span> XP</p>
+                <div class="progress-bar">
+                    <div class="progress" style="width: 78%;"></div>
+                </div>
+                <small>Next level: 220 XP</small>
+            </div>
+
+            <div class="stat-card card grades">
+                <h2>Grades</h2>
+                <p>Average Grade:</p>
+                <p class="highlight"><span id="avg-grade">88%</span></p>
+            </div>
+
+            <div class="stat-card card audits">
+                <h2>Audits</h2>
+                 <div class="audit-stats">
+                    <div>
+                        <p>Done: <span id="audits-done">25</span></p>
+                        <p>Received: <span id="audits-received">30</span></p>
+                    </div>
+                    <div>
+                        <p>Pass (Done): <span id="pass-ratio-done">92%</span></p>
+                        <p>Pass (Rcvd): <span id="pass-ratio-received">85%</span></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics Graphs Section -->
+        <main class="stats-graphs card">
+            <h2 class="main-stats-title">Statistics</h2>
+            <div class="stats-layout">
+                 <div class="stats-column progress-column">
+                     <h3>Progress Over Time</h3>
+                     <div class="chart-container">
+                        <canvas id="xpOverTimeChart"></canvas>
+                    </div>
+                 </div>
+                 <div class="stats-column skills-column">
+                    <h3>Skills Proficiency</h3>
+                    <div id="skills-donuts-container" class="skills-donuts">
+                        <!-- SVG donuts will be injected here by JS -->
+                    </div>
+                 </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
