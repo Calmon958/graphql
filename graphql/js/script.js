@@ -1,46 +1,46 @@
-import Chart from 'chart.js';
+// import Chart from 'chart.js';
 import { Chart as ChartJS, registerables } from 'chart.js';
 
 // Register necessary Chart.js components if not using the full bundle or default import doesn't cover everything
 ChartJS.register(...registerables);
 
 // --- Mock Data (Replace with actual data fetching) ---
-const userData = {
-    fullname: "Alex Doe",
-    username: "alexd",
-    description: "Passionate developer exploring the web.",
-    avatar: "https://images.websim.ai/avatar/alexd", // Example dynamic avatar
-    xp: 15780,
-    xpRequired: 20000, // For progress bar calculation
-    avgGrade: 88,
-    auditsDone: 25,
-    auditsReceived: 30,
-    passRatioDone: 92,
-    passRatioReceived: 85,
-    skillLevels: { // Data for Skill Donuts (assuming 0-10 scale)
-        "JS": 9,
-        "HTML": 8,
-        "CSS": 7,
-        "React": 8,
-        "Node": 6,
-        "Python": 5,
-        "SQL": 7
-    },
-    xpHistory: [ // Data for XP over time chart
-        { month: 'Jan', xp: 1000 },
-        { month: 'Feb', xp: 1500 },
-        { month: 'Mar', xp: 2200 },
-        { month: 'Apr', xp: 3000 },
-        { month: 'May', xp: 4500 },
-        { month: 'Jun', xp: 6000 },
-        { month: 'Jul', xp: 7800 },
-        { month: 'Aug', xp: 9500 },
-        { month: 'Sep', xp: 11000 },
-        { month: 'Oct', xp: 13000 },
-        { month: 'Nov', xp: 14500 },
-        { month: 'Dec', xp: 15780 },
-    ]
-};
+// const userData = {
+//     fullname: "Alex Doe",
+//     username: "alexd",
+//     description: "Passionate developer exploring the web.",
+//     avatar: "https://images.websim.ai/avatar/alexd", // Example dynamic avatar
+//     xp: 15780,
+//     xpRequired: 20000, // For progress bar calculation
+//     avgGrade: 88,
+//     auditsDone: 25,
+//     auditsReceived: 30,
+//     passRatioDone: 92,
+//     passRatioReceived: 85,
+//     skillLevels: { // Data for Skill Donuts (assuming 0-10 scale)
+//         "JS": 9,
+//         "HTML": 8,
+//         "CSS": 7,
+//         "React": 8,
+//         "Node": 6,
+//         "Python": 5,
+//         "SQL": 7
+//     },
+//     xpHistory: [ // Data for XP over time chart
+//         { month: 'Jan', xp: 1000 },
+//         { month: 'Feb', xp: 1500 },
+//         { month: 'Mar', xp: 2200 },
+//         { month: 'Apr', xp: 3000 },
+//         { month: 'May', xp: 4500 },
+//         { month: 'Jun', xp: 6000 },
+//         { month: 'Jul', xp: 7800 },
+//         { month: 'Aug', xp: 9500 },
+//         { month: 'Sep', xp: 11000 },
+//         { month: 'Oct', xp: 13000 },
+//         { month: 'Nov', xp: 14500 },
+//         { month: 'Dec', xp: 15780 },
+//     ]
+// };
 
 // --- DOM Elements ---
 const userAvatar = document.getElementById('user-avatar');

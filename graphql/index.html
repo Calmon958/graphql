@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Profile</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button id="logout-btn" class="logout-button">Logout</button>
+        </header>
+        
+        <main class="profile-content">
+            <div class="profile-header card">
+                <h1 id="username">Loading...</h1>
+                <div id="total-xp" class="xp-badge">0 XP</div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="card">
+                    <h2>XP Progress</h2>
+                    <canvas id="xp-chart"></canvas>
+                </div>
+                
+                <div class="card">
+                    <h2>Audit Ratio</h2>
+                    <canvas id="audit-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Skills</h2>
+                <div id="skills-container"></div>
+            </div>
+        </main>
+    </div>
+    
+    <script type="module" src="js/profile.js"></script>
+</body>
+</html>
