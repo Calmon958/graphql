@@ -1,0 +1,243 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #DEF9C4; /* Lightest color for main background */
+  color: #468585; /* Darkest color for primary text */
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Align to top for scrollable content */
+  min-height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+#app-container {
+  width: 100%;
+  max-width: 800px; /* Increased max-width for profile page */
+}
+
+.error-message {
+  color: #E87A7A;
+  background-color: rgba(232, 122, 122, 0.1);
+  padding: 12px;
+  border-radius: 6px;
+  margin: 10px 0;
+  text-align: center;
+  display: none;
+}
+
+.chart-line {
+  fill: none;
+  stroke: #50B498;
+  stroke-width: 2;
+}
+
+.chart-point {
+  fill: #50B498;
+}
+
+.chart-label {
+  fill: #468585;
+  font-size: 12px;
+}
+
+.chart-grid-line {
+  stroke: #9CDBA6;
+  stroke-width: 0.5;
+  opacity: 0.2;
+}
+
+.audit-bar {
+  transition: height 0.3s ease;
+}
+
+h1, h2 {
+  color: #468585; /* Darkest for main headers */
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+#login-page h1 {
+  font-size: 2em;
+  margin-bottom: 30px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #50B498; /* Mid-dark for labels */
+  font-weight: bold;
+}
+
+input[type="text"], input[type="password"] {
+  width: calc(100% - 24px); /* Account for padding */
+  padding: 12px;
+  border: 1px solid #9CDBA6; /* Light-mid for input borders */
+  border-radius: 6px;
+  background-color: #EFFFF7; /* Very light green, derived from #DEF9C4 */
+  color: #468585;
+  font-size: 1em;
+}
+
+input[type="text"]:focus, input[type="password"]:focus {
+  outline: none;
+  border-color: #50B498; /* Mid-dark for focus */
+  box-shadow: 0 0 0 2px rgba(80, 180, 152, 0.3); /* #50B498 with alpha */
+}
+
+button {
+  background-color: #50B498; /* Mid-dark for buttons */
+  color: #FFFFFF; 
+  padding: 12px 25px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: bold;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  display: block; /* Make button block for full width option */
+}
+
+button:hover {
+  background-color: #468585; /* Darkest on hover */
+}
+button:active {
+  transform: translateY(1px);
+}
+
+#login-form button {
+  width: 100%;
+  margin-top: 10px;
+}
+
+
+/* Profile Page Specifics */
+#profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #9CDBA6; /* Light-mid for separator */
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+}
+
+#profile-title-container {
+  display: flex;
+  align-items: center;
+}
+
+#profile-avatar-placeholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #9CDBA6; /* Placeholder color */
+  margin-right: 20px;
+  object-fit: cover; /* In case a real image is used */
+  border: 2px solid #50B498;
+}
+
+#profile-greeting {
+  margin: 0;
+  font-size: 2em;
+  color: #468585;
+  text-align: left;
+}
+
+#logout-button {
+  background-color: #E87A7A; /* A contrasting color for logout */
+}
+#logout-button:hover {
+  background-color: #D35454;
+}
+
+
+.profile-section {
+  background-color: #EFFFF7; /* Very light green for section backgrounds */
+  padding: 20px;
+  margin-bottom: 25px;
+  border-radius: 8px;
+  border: 1px solid #B8EAD2; /* Lighter than #9CDBA6 */
+}
+
+.profile-section h2 {
+  color: #50B498; /* Mid-dark for section titles */
+  margin-top: 0;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #9CDBA6;
+  padding-bottom: 10px;
+  text-align: left;
+  font-size: 1.5em;
+}
+
+.profile-data {
+  font-size: 1.1em;
+  line-height: 1.6;
+}
+
+#xp-amount {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #50B498;
+  text-align: center;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 25px;
+}
+
+#grades-list, #skills-container ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+#grades-list li, #skills-container li {
+  background-color: #DEF9C4;
+  color: #468585;
+  padding: 12px 15px;
+  margin-bottom: 8px;
+  border-radius: 5px;
+  border-left: 4px solid #50B498; /* Accent border */
+}
+
+#audits-info p {
+  margin: 5px 0 10px;
+}
+#audits-info span {
+  font-weight: bold;
+  color: #50B498;
+}
+
+#skills-container .skill-item {
+  margin-bottom: 15px;
+}
+
+#skills-container .skill-name {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+#skills-container .skill-bar-container {
+  background-color: #C0E6D2; /* Lighter shade of #9CDBA6 */
+  border-radius: 5px;
+  height: 20px;
+  overflow: hidden;
+}
+
+#skills-container .skill-bar {
+  background-color: #50B498; /* Mid-dark for skill bar fill */
+  height: 100%;
+  border-radius: 5px 0 0 5px; /* Keep left radius if not full */
+  text-align: right;
+  padding-right: 5px;
+  box-sizing: border-box;
+  color: white;
+  font-size: 0.8em;
+  line-height: 20px; /* Vertically center text */
+}
