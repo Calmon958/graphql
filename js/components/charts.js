@@ -3,213 +3,6 @@
  */
 const Charts = (function() {
   /**
-   * Helper function to create SVG elements
-   * @param {string} type - SVG element type
-   * @param {Object} attributes - Element attributes
-   * @return {SVGElement} Created SVG element
-   */
-  function createSVGElement(type, attributes = {}) {
-    const element = document.createElementNS('http://www.w3.org/2000/svg', type);
-    
-    for (const [key, value] of Object.entries(attributes)) {
-      element.setAttribute(key, value);
-    }
-    
-    return element;
-  }
-
-  /**
-   * Scale a value from one range to another
-   * @param {number} value - Value to scale
-   * @param {number} inMin - Input range minimum
-   * @param {number} inMax - Input range maximum
-   * @param {number} outMin - Output range minimum
-   * @param {number} outMax - Output range maximum
-   * @return {number} Scaled value
-   */
-  function scaleValue(value, inMin, inMax, outMin, outMax) {
-    return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
-  }
-
-  /**
-   * Render a message when no data is available
-   * @param {SVGElement} chart - Chart SVG group element
-   * @param {number} width - Chart width
-   * @param {number} height - Chart height
-   */
-  function renderNoDataMessage(chart, width, height) {
-    const text = createSVGElement('text', {
-      x: width / 2,
-      y: height / 2,
-      'text-anchor': 'middle',
-      'alignment-baseline': 'middle',
-      fill: 'var(--text-secondary)'
-    });
-    
-    text.textContent = 'No data available';
-    chart.appendChild(text);
-  }
-
-  /**
-   * Render grid lines
-   * @param {SVGElement} chart - Chart SVG group element
-   * @param {number} width - Chart width
-   * @param {number} height - Chart height
-   */
-  function renderGrid(chart, width, height) {
-    // Horizontal grid lines (5 lines)
-    for (let i = 0; i < 5; i++) {
-      const y = (height / 4) * i;
-      const line = createSVGElement('line', {
-        x1: 0,
-        y1: y,
-        x2: width,
-        y2: y,
-        stroke: 'var(--chart-grid)',
-        'stroke-width': 0.5,
-        'stroke-dasharray': '2,2'
-      });
-      
-      chart.appendChild(line);
-    }
-    
-    // Vertical grid lines (5 lines)
-    for (let i = 0; i < 5; i++) {
-      const x = (width / 4) * i;
-      const line = createSVGElement('line', {
-        x1: x,
-        y1: 0,
-        x2: x,
-        y2: height,
-        stroke: 'var(--chart-grid)',
-        'stroke-width': 0.5,
-        'stroke-dasharray': '2,2'
-      });
-      
-      chart.appendChild(line);
-    }
-  }
-
-  /**
-   * Render chart axes
-   * @param {SVGElement} chart - Chart SVG group element
-   * @param {number} width - Chart width
-   * @param {number} height - Chart height
-   * @param {number} xMin - X-axis minimum value
-   * @param {number} xMax - X-axis maximum value
-   * @param {number} yMin - Y-axis minimum value
-   * @param {number} yMax - Y-axis maximum value
-   * @param {Object} options - Chart options
-   */
-  function renderAxes(chart, width, height, xMin, xMax, yMin, yMax, options) {
-    // X-axis
-    const xAxis = createSVGElement('line', {
-      x1: 0,
-      y1: height,
-      x2: width,
-      y2: height,
-      stroke: 'var(--chart-grid)',
-      'stroke-width': 1
-    });
-    chart.appendChild(xAxis);
-    
-    // Y-axis
-    const yAxis = createSVGElement('line', {
-      x1: 0,
-      y1: 0,
-      x2: 0,
-      y2: height,
-      stroke: 'var(--chart-grid)',
-      'stroke-width': 1
-    });
-    chart.appendChild(yAxis);
-    
-    // X-axis ticks and labels
-    const xTickCount = 5;
-    for (let i = 0; i < xTickCount; i++) {
-      const x = (width / (xTickCount - 1)) * i;
-      
-      // Tick
-      const tick = createSVGElement('line', {
-        x1: x,
-        y1: height,
-        x2: x,
-        y2: height + 5,
-        stroke: 'var(--chart-grid)',
-        'stroke-width': 1
-      });
-      chart.appendChild(tick);
-      
-      // Label
-      const tickValue = new Date(xMin + ((xMax - xMin) * i) / (xTickCount - 1));
-      const label = createSVGElement('text', {
-        x: x,
-        y: height + 20,
-        'text-anchor': 'middle',
-        fill: 'var(--text-secondary)',
-        'font-size': '10px'
-      });
-      
-      // Format date label
-      const month = tickValue.getMonth() + 1;
-      const day = tickValue.getDate();
-      label.textContent = `${month}/${day}`;
-      
-      chart.appendChild(label);
-    }
-    
-    // Y-axis ticks and labels
-    const yTickCount = 5;
-    for (let i = 0; i < yTickCount; i++) {
-      const y = height - (height / (yTickCount - 1)) * i;
-      
-      // Tick
-      const tick = createSVGElement('line', {
-        x1: -5,
-        y1: y,
-        x2: 0,
-        y2: y,
-        stroke: 'var(--chart-grid)',
-        'stroke-width': 1
-      });
-      chart.appendChild(tick);
-      
-      // Grid line
-      const grid = createSVGElement('line', {
-        x1: 0,
-        y1: y,
-        x2: chart.parentNode.getAttribute('width') - 60,
-        y2: y,
-        stroke: 'var(--chart-grid)',
-        'stroke-width': 0.5,
-        'stroke-dasharray': '2,2'
-      });
-      chart.appendChild(grid);
-      
-      // Tick label
-      const label = createSVGElement('text', {
-        x: -10,
-        y: y,
-        'text-anchor': 'end',
-        'alignment-baseline': 'middle',
-        fill: 'var(--text-secondary)',
-        'font-size': '10px'
-      });
-      
-      // Format the value
-      let formattedValue;
-      if (value >= 1000) {
-        formattedValue = (value / 1000).toFixed(1) + 'k';
-      } else {
-        formattedValue = Math.round(value);
-      }
-      
-      label.textContent = formattedValue;
-      chart.appendChild(label);
-    }
-  }
-  
-  /**
    * Create a bar chart
    * @param {string} elementId - ID of the container element
    * @param {Array} data - Array of data objects with name and value properties
@@ -455,137 +248,480 @@ const Charts = (function() {
   
   /**
    * Create a line chart
-   * @param {string} containerId - ID of the container element
-   * @param {Array} data - Array of data points with x and y properties
+   * @param {string} elementId - ID of the container element
+   * @param {Array} data - Array of data objects with x and y properties
    * @param {Object} options - Chart options
    */
-  function createLineChart(containerId, data, options = {}) {
-    const container = document.getElementById(containerId);
-    if (!container) {
-      console.error(`Container element with ID "${containerId}" not found`);
-      return;
-    }
-    
-    // Default options
-    const defaults = {
-      width: container.clientWidth || 400,
-      height: container.clientHeight || 250,
-      margin: { top: 20, right: 20, bottom: 40, left: 40 },
-      lineColor: '#50B498',
-      lineWidth: 2,
-      pointColor: '#50B498',
-      pointRadius: 4,
-      areaColor: 'rgba(80, 180, 152, 0.2)',
-      showPoints: true,
-      showArea: false,
-      showAxes: true,
-      gridLines: false,
-      animate: true,
-      showTooltips: true
-    };
-    
-    // Merge options
-    const opts = { ...defaults, ...options };
-    
-    // Calculate dimensions
-    const chartWidth = opts.width - opts.margin.left - opts.margin.right;
-    const chartHeight = opts.height - opts.margin.top - opts.margin.bottom;
-    
-    // Clear previous content
-    container.innerHTML = '';
-    
-    // Create SVG
-    const svg = createSVGElement('svg', {
-      width: opts.width,
-      height: opts.height,
-      style: 'overflow: visible;'
-    });
-    
-    // Create chart group with margin transform
-    const chart = createSVGElement('g', {
-      transform: `translate(${opts.margin.left},${opts.margin.top})`
-    });
-    svg.appendChild(chart);
-    
-    // Prepare and validate data
-    const validData = data.filter(d => {
-      const x = new Date(d.x).getTime();
-      const y = parseFloat(d.y);
-      return !isNaN(x) && !isNaN(y);
-    });
-    
-    if (validData.length === 0) {
-      renderNoDataMessage(chart, chartWidth, chartHeight);
-      container.appendChild(svg);
-      return;
-    }
-    
-    // Convert data to usable format
-    const xValues = validData.map(d => new Date(d.x).getTime());
-    const yValues = validData.map(d => parseFloat(d.y));
-    
-    // Calculate domain
-    const xMin = Math.min(...xValues);
-    const xMax = Math.max(...xValues);
-    const yMin = Math.min(...yValues);
-    const yMax = Math.max(...yValues);
-    
-    // Add padding to y-axis (10%)
-    const yPadding = (yMax - yMin) * 0.1;
-    const adjustedYMin = Math.max(0, yMin - yPadding);
-    const adjustedYMax = yMax + yPadding;
-    
-    // Calculate points
-    const points = validData.map(d => {
-      const x = scaleValue(new Date(d.x).getTime(), xMin, xMax, 0, chartWidth);
-      const y = scaleValue(parseFloat(d.y), adjustedYMin, adjustedYMax, chartHeight, 0);
-      return { x, y, originalX: d.x, originalY: d.y };
-    });
-    
-    // Add grid if enabled
-    if (opts.gridLines) {
-      renderGrid(chart, chartWidth, chartHeight);
-    }
-    
-    // Create axes
-    if (opts.showAxes) {
-      renderAxes(chart, chartWidth, chartHeight, xMin, xMax, adjustedYMin, adjustedYMax, opts);
-    }
-    
-    // Create area if needed (before line so it's behind)
-    if (opts.showArea) {
-      const areaPath = createAreaPath(points, chartHeight, opts);
-      chart.appendChild(areaPath);
-    }
-    
-    // Create line path
-    const linePath = createLinePath(points, opts);
-    chart.appendChild(linePath);
-    
-    // Add points
-    if (opts.showPoints) {
-      points.forEach((p, i) => {
-        const point = createPoint(p, validData[i], opts);
-        chart.appendChild(point);
-        
-        // Add tooltip functionality if enabled
-        if (opts.showTooltips) {
-          addTooltipBehavior(point, p, validData[i], container);
-        }
-      });
-    }
-    
-    // Add the SVG to the container
-    container.appendChild(svg);
-    
-    // Create tooltip element if it doesn't exist
-    if (opts.showTooltips && !document.querySelector('.chart-tooltip')) {
-      const tooltip = document.createElement('div');
-      tooltip.className = 'chart-tooltip';
-      tooltip.style.display = 'none';
-      document.body.appendChild(tooltip);
-    }
+/**
+ * Creates an interactive line chart with customizable options
+ * @param {string} elementId - ID of the container element
+ * @param {Array} data - Array of {x, y} data points 
+ * @param {Object} options - Configuration options
+ */
+function createLineChart(elementId, data, options = {}) {
+  // Get container and validate
+  const container = document.getElementById(elementId);
+  if (!container) {
+    console.error("Container element not found");
+    return;
   }
+  
+  // Default options
+  const defaults = {
+    width: container.clientWidth || 600,
+    height: container.clientHeight || 400,
+    margin: { top: 20, right: 30, bottom: 50, left: 50 },
+    lineColor: "#3b82f6", // Default blue color
+    pointColor: "#3b82f6",
+    animate: true,
+    showPoints: true,
+    showArea: false,
+    areaOpacity: 0.2,
+    lineWidth: 2,
+    pointRadius: 4,
+    showTooltips: true,
+    showAxes: true,
+    xAxisLabel: "",
+    yAxisLabel: "",
+    gridLines: true
+  };
+  
+  // Merge options
+  const opts = { ...defaults, ...options };
+  
+  // Calculate dimensions
+  const chartWidth = opts.width - opts.margin.left - opts.margin.right;
+  const chartHeight = opts.height - opts.margin.top - opts.margin.bottom;
+  
+  // Clear previous content
+  container.innerHTML = '';
+  
+  // Create SVG
+  const svg = createSVGElement('svg', {
+    width: opts.width,
+    height: opts.height,
+    style: 'overflow: visible;'
+  });
+  
+  // Create chart group with margin transform
+  const chart = createSVGElement('g', {
+    transform: `translate(${opts.margin.left},${opts.margin.top})`
+  });
+  svg.appendChild(chart);
+  
+  // Prepare and validate data
+  const validData = data.filter(d => {
+    const x = new Date(d.x).getTime();
+    const y = parseFloat(d.y);
+    return !isNaN(x) && !isNaN(y);
+  });
+  
+  if (validData.length === 0) {
+    renderNoDataMessage(chart, chartWidth, chartHeight);
+    container.appendChild(svg);
+    return;
+  }
+  
+  // Convert data to usable format
+  const xValues = validData.map(d => new Date(d.x).getTime());
+  const yValues = validData.map(d => parseFloat(d.y));
+  
+  // Calculate domain
+  const xMin = Math.min(...xValues);
+  const xMax = Math.max(...xValues);
+  const yMin = Math.min(...yValues);
+  const yMax = Math.max(...yValues);
+  
+  // Add padding to y-axis (10%)
+  const yPadding = (yMax - yMin) * 0.1;
+  const adjustedYMin = Math.max(0, yMin - yPadding);
+  const adjustedYMax = yMax + yPadding;
+  
+  // Calculate points
+  const points = validData.map(d => {
+    const x = scaleValue(new Date(d.x).getTime(), xMin, xMax, 0, chartWidth);
+    const y = scaleValue(parseFloat(d.y), adjustedYMin, adjustedYMax, chartHeight, 0);
+    return { x, y, originalX: d.x, originalY: d.y };
+  });
+  
+  // Add grid if enabled
+  if (opts.gridLines) {
+    renderGrid(chart, chartWidth, chartHeight);
+  }
+  
+  // Create axes
+  if (opts.showAxes) {
+    renderAxes(chart, chartWidth, chartHeight, xMin, xMax, adjustedYMin, adjustedYMax, opts);
+  }
+  
+  // Create area if needed (before line so it's behind)
+  if (opts.showArea) {
+    const areaPath = createAreaPath(points, chartHeight, opts);
+    chart.appendChild(areaPath);
+  }
+  
+  // Create line path
+  const linePath = createLinePath(points, opts);
+  chart.appendChild(linePath);
+  
+  // Add points
+  if (opts.showPoints) {
+    points.forEach((p, i) => {
+      const point = createPoint(p, validData[i], opts);
+      chart.appendChild(point);
+      
+      // Add tooltip functionality if enabled
+      if (opts.showTooltips) {
+        addTooltipBehavior(point, p, validData[i]);
+      }
+    });
+  }
+  
+  // Add the chart to the container
+  container.appendChild(svg);
+  
+  // Helper functions
+  
+  // Create SVG element with attributes
+  function createSVGElement(type, attributes = {}) {
+    const element = document.createElementNS('http://www.w3.org/2000/svg', type);
+    for (const [key, value] of Object.entries(attributes)) {
+      element.setAttribute(key, value);
+    }
+    return element;
+  }
+  
+  // Scale a value from one range to another
+  function scaleValue(value, inMin, inMax, outMin, outMax) {
+    return outMin + (outMax - outMin) * ((value - inMin) / (inMax - inMin));
+  }
+  
+  // Format date for display
+  function formatDate(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString();
+  }
+  
+  // Format number for display
+  function formatNumber(num) {
+    return parseFloat(num).toLocaleString(undefined, { 
+      maximumFractionDigits: 2 
+    });
+  }
+  
+  // Show "No data" message
+  function renderNoDataMessage(parent, width, height) {
+    const text = createSVGElement('text', {
+      x: width / 2,
+      y: height / 2,
+      'text-anchor': 'middle',
+      'dominant-baseline': 'middle',
+      'font-size': '14px',
+      fill: '#666'
+    });
+    text.textContent = 'No valid data to display';
+    parent.appendChild(text);
+  }
+  
+  // Create grid lines
+  function renderGrid(parent, width, height) {
+    const grid = createSVGElement('g', {
+      class: 'grid',
+      stroke: '#e5e5e5',
+      'stroke-width': '0.5'
+    });
+    
+    // Horizontal grid lines (5 lines)
+    for (let i = 0; i <= 5; i++) {
+      const y = (height / 5) * i;
+      const line = createSVGElement('line', {
+        x1: 0,
+        y1: y,
+        x2: width,
+        y2: y,
+        stroke: '#e5e5e5'
+      });
+      grid.appendChild(line);
+    }
+    
+    // Vertical grid lines (5 lines)
+    for (let i = 0; i <= 5; i++) {
+      const x = (width / 5) * i;
+      const line = createSVGElement('line', {
+        x1: x,
+        y1: 0,
+        x2: x,
+        y2: height,
+        stroke: '#e5e5e5'
+      });
+      grid.appendChild(line);
+    }
+    
+    parent.appendChild(grid);
+  }
+  
+  // Create axes
+  function renderAxes(parent, width, height, xMin, xMax, yMin, yMax, options) {
+    const axesGroup = createSVGElement('g', { class: 'axes' });
+    
+    // X-axis line
+    const xAxis = createSVGElement('line', {
+      x1: 0,
+      y1: height,
+      x2: width,
+      y2: height,
+      stroke: '#666',
+      'stroke-width': 1
+    });
+    axesGroup.appendChild(xAxis);
+    
+    // Y-axis line
+    const yAxis = createSVGElement('line', {
+      x1: 0,
+      y1: 0,
+      x2: 0,
+      y2: height,
+      stroke: '#666',
+      'stroke-width': 1
+    });
+    axesGroup.appendChild(yAxis);
+    
+    // X-axis ticks and labels
+    const xTickCount = 5;
+    for (let i = 0; i <= xTickCount; i++) {
+      const x = (width / xTickCount) * i;
+      const tickValue = xMin + (xMax - xMin) * (i / xTickCount);
+      
+      // Tick mark
+      const tick = createSVGElement('line', {
+        x1: x,
+        y1: height,
+        x2: x,
+        y2: height + 5,
+        stroke: '#666',
+        'stroke-width': 1
+      });
+      
+      // Label
+      const label = createSVGElement('text', {
+        x: x,
+        y: height + 20,
+        'text-anchor': 'middle',
+        'font-size': '12px',
+        fill: '#666'
+      });
+      label.textContent = formatDate(tickValue);
+      
+      axesGroup.appendChild(tick);
+      axesGroup.appendChild(label);
+    }
+    
+    // Y-axis ticks and labels
+    const yTickCount = 5;
+    for (let i = 0; i <= yTickCount; i++) {
+      const y = height - (height / yTickCount) * i;
+      const tickValue = yMin + (yMax - yMin) * (i / yTickCount);
+      
+      // Tick mark
+      const tick = createSVGElement('line', {
+        x1: -5,
+        y1: y,
+        x2: 0,
+        y2: y,
+        stroke: '#666',
+        'stroke-width': 1
+      });
+      
+      // Label
+      const label = createSVGElement('text', {
+        x: -10,
+        y: y,
+        'text-anchor': 'end',
+        'dominant-baseline': 'middle',
+        'font-size': '12px',
+        fill: '#666'
+      });
+      label.textContent = formatNumber(tickValue);
+      
+      axesGroup.appendChild(tick);
+      axesGroup.appendChild(label);
+    }
+    
+    // Add axis labels if provided
+    if (options.xAxisLabel) {
+      const xLabel = createSVGElement('text', {
+        x: width / 2,
+        y: height + 40,
+        'text-anchor': 'middle',
+        'font-size': '14px',
+        fill: '#333'
+      });
+      xLabel.textContent = options.xAxisLabel;
+      axesGroup.appendChild(xLabel);
+    }
+    
+    if (options.yAxisLabel) {
+      const yLabel = createSVGElement('text', {
+        x: -35,
+        y: height / 2,
+        'text-anchor': 'middle',
+        'dominant-baseline': 'middle',
+        'transform': `rotate(-90, -35, ${height / 2})`,
+        'font-size': '14px',
+        fill: '#333'
+      });
+      yLabel.textContent = options.yAxisLabel;
+      axesGroup.appendChild(yLabel);
+    }
+    
+    parent.appendChild(axesGroup);
+  }
+  
+  // Create line path
+  function createLinePath(points, options) {
+    // Create path data
+    let pathData = '';
+    points.forEach((p, i) => {
+      if (i === 0) {
+        pathData += `M ${p.x} ${p.y}`;
+      } else {
+        pathData += ` L ${p.x} ${p.y}`;
+      }
+    });
+    
+    const path = createSVGElement('path', {
+      d: pathData,
+      fill: 'none',
+      stroke: options.lineColor,
+      'stroke-width': options.lineWidth,
+      'stroke-linejoin': 'round',
+      'stroke-linecap': 'round'
+    });
+    
+    // Add animation
+    if (options.animate) {
+      const length = path.getTotalLength();
+      path.setAttribute('stroke-dasharray', length);
+      path.setAttribute('stroke-dashoffset', length);
+      
+      const animation = createSVGElement('animate', {
+        attributeName: 'stroke-dashoffset',
+        from: length,
+        to: 0,
+        dur: '1s',
+        fill: 'freeze'
+      });
+      
+      path.appendChild(animation);
+    }
+    
+    return path;
+  }
+  
+  // Create area path
+  function createAreaPath(points, height, options) {
+    // Create path data for area
+    let areaData = '';
+    points.forEach((p, i) => {
+      if (i === 0) {
+        areaData += `M ${p.x} ${p.y}`;
+      } else {
+        areaData += ` L ${p.x} ${p.y}`;
+      }
+    });
+    
+    // Close the path to create an area
+    areaData += ` L ${points[points.length - 1].x} ${height}`;
+    areaData += ` L ${points[0].x} ${height}`;
+    areaData += ' Z';
+    
+    const areaPath = createSVGElement('path', {
+      d: areaData,
+      fill: options.lineColor,
+      'fill-opacity': options.areaOpacity,
+      stroke: 'none'
+    });
+    
+    // Add animation
+    if (options.animate) {
+      areaPath.setAttribute('opacity', '0');
+      const animation = createSVGElement('animate', {
+        attributeName: 'opacity',
+        from: 0,
+        to: 1,
+        dur: '1s',
+        fill: 'freeze'
+      });
+      areaPath.appendChild(animation);
+    }
+    
+    return areaPath;
+  }
+  
+  // Create data point
+  function createPoint(point, originalData, options) {
+    const circle = createSVGElement('circle', {
+      cx: point.x,
+      cy: point.y,
+      r: options.pointRadius,
+      fill: options.pointColor,
+      stroke: '#ffffff',
+      'stroke-width': 1.5,
+      'data-x': originalData.x,
+      'data-y': originalData.y
+    });
+    
+    // Add animation
+    if (options.animate) {
+      circle.setAttribute('opacity', '0');
+      const animation = createSVGElement('animate', {
+        attributeName: 'opacity',
+        from: '0',
+        to: '1',
+        dur: '1s',
+        fill: 'freeze'
+      });
+      circle.appendChild(animation);
+    }
+    
+    return circle;
+  }
+  
+  // Add tooltip behavior
+  function addTooltipBehavior(element, point, originalData) {
+    // Create tooltip element outside of SVG
+    const tooltip = document.createElement('div');
+    tooltip.style.position = 'absolute';
+    tooltip.style.display = 'none';
+    tooltip.style.padding = '8px';
+    tooltip.style.background = 'rgba(0, 0, 0, 0.8)';
+    tooltip.style.color = '#fff';
+    tooltip.style.borderRadius = '4px';
+    tooltip.style.fontSize = '12px';
+    tooltip.style.pointerEvents = 'none';
+    tooltip.style.zIndex = '1000';
+    tooltip.style.whiteSpace = 'nowrap';
+    document.body.appendChild(tooltip);
+    
+    // Mouse events
+    element.addEventListener('mouseenter', (e) => {
+      const date = formatDate(new Date(originalData.x).getTime());
+      const value = formatNumber(originalData.y);
+      tooltip.innerHTML = `<strong>${date}</strong>: ${value}`;
+      tooltip.style.display = 'block';
+    });
+    
+    element.addEventListener('mousemove', (e) => {
+      const rect = container.getBoundingClientRect();
+      tooltip.style.left = (e.clientX + 10) + 'px';
+      tooltip.style.top = (e.clientY + 10) + 'px';
+    });
+    
+    element.addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+    });
+  }
+}
   
   /**
    * Create X axis
