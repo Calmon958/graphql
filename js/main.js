@@ -1,10 +1,12 @@
 /**
  * Main Application Module
  */
+// Set to false to use the actual GraphQL API
+const isDevelopment = false;
+
 (function() {
   // Main application state
   let isInitialized = false;
-  let isLoading = false;
   
   /**
    * Initialize the application
@@ -12,15 +14,11 @@
   function init() {
     if (isInitialized) return;
     
-    // Setup logout button directly
-    const logoutButton = document.getElementById('logout-button');
-    if (logoutButton) {
-      console.log('Setting up logout button in main.js');
-      logoutButton.addEventListener('click', function(e) {
-        e.preventDefault();
-        console.log('Logout button clicked from main.js');
-        Auth.logout();
-      });
+    console.log('Initializing application in ' + (isDevelopment ? 'DEVELOPMENT' : 'PRODUCTION') + ' mode');
+    
+    // Initialize theme
+    if (typeof ThemeManager !== 'undefined') {
+      ThemeManager.initTheme();
     }
     
     // Check authentication state
@@ -34,7 +32,11 @@
     // Setup login form
     setupLoginForm();
     
+    // Setup logout button
+    setupLogoutButton();
+    
     isInitialized = true;
+    console.log('Application initialized');
   }
   
   /**
@@ -44,29 +46,36 @@
     const loginForm = document.getElementById('login-form');
     
     if (loginForm) {
-      loginForm.addEventListener('submit', async (e) => {
+      loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        const username = document.getElementById('username').value.trim();
+        const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         const errorEl = document.getElementById('login-error');
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn ? submitBtn.textContent : 'Login';
         
         if (!username || !password) {
           if (errorEl) {
-            errorEl.textContent = 'Please enter both username and password';
+            errorEl.textContent = 'Please enter both username and password.';
             errorEl.style.display = 'block';
           }
           return;
         }
         
-        // Show loading overlay
-        const loadingOverlay = document.getElementById('loading-overlay');
-        if (loadingOverlay) {
-          loadingOverlay.classList.remove('hidden');
+        // Show loading state
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Logging in...';
+        }
+        
+        // Hide previous error
+        if (errorEl) {
+          errorEl.style.display = 'none';
         }
         
         try {
-          console.log('Attempting login with credentials...');
+          console.log('Attempting login with:', username);
           const result = await Auth.login(username, password);
           
           if (result.success) {
@@ -74,17 +83,11 @@
             showMainApp();
             loadUserData();
           } else {
-            console.error('Login failed:', result.error);
             if (errorEl) {
-              // Display a more user-friendly error message
-              if (result.error && result.error.includes('HTML')) {
-                errorEl.textContent = 'Authentication server error. Please try again later.';
-              } else if (result.error && result.error.includes('endpoint')) {
-                errorEl.textContent = 'Unable to connect to authentication server. Please try again later.';
-              } else {
-                errorEl.textContent = result.error || 'Login failed. Please check your credentials.';
-              }
+              // Display the specific error message from the API
+              errorEl.textContent = result.error || 'Login failed. Please check your credentials.';
               errorEl.style.display = 'block';
+              console.error('Login failed:', result.error);
             }
           }
         } catch (error) {
@@ -94,11 +97,25 @@
             errorEl.style.display = 'block';
           }
         } finally {
-          // Hide loading overlay
-          if (loadingOverlay) {
-            loadingOverlay.classList.add('hidden');
+          // Restore button state
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
           }
         }
+      });
+    }
+  }
+  
+  /**
+   * Setup logout button
+   */
+  function setupLogoutButton() {
+    const logoutBtn = document.getElementById('logout-button');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', function() {
+        Auth.logout();
+        showLoginPage();
       });
     }
   }
@@ -119,17 +136,16 @@
     }
     
     // Initialize components
-    Navigation.init();
-    Sidebar.init();
-    Profile.init();
+    if (typeof Navigation !== 'undefined') {
+      Navigation.init();
+    }
     
-    // Update header with username if available
-    const username = Auth.getUsername();
-    if (username) {
-      const headerTitle = document.querySelector('.nav-left h1');
-      if (headerTitle) {
-        headerTitle.textContent = `Hello, ${username}`;
-      }
+    if (typeof Sidebar !== 'undefined') {
+      Sidebar.init();
+    }
+    
+    if (typeof Profile !== 'undefined') {
+      Profile.init();
     }
   }
   
@@ -153,9 +169,6 @@
    * Load user data from GraphQL API
    */
   async function loadUserData() {
-    if (isLoading) return;
-    isLoading = true;
-    
     // Show loading overlay
     const loadingOverlay = document.getElementById('loading-overlay');
     if (loadingOverlay) {
@@ -166,139 +179,90 @@
       const token = Auth.getToken();
       
       if (!token) {
-        console.error('No authentication token found');
         throw new Error('No authentication token found');
       }
       
-      console.log('Fetching user profile data with token:', token);
+      // Check if token appears to be a valid JWT
+      if (token.split('.').length !== 3) {
+        console.error('Invalid JWT token format:', token);
+        throw new Error('Invalid authentication token format');
+      }
       
-      // Fetch user profile data
-      const result = await GraphQL.fetchUserProfile(token);
+      // Check if GraphQL module is defined
+      if (typeof GraphQL === 'undefined') {
+        throw new Error('GraphQL module is not defined. Check if graphql.js is loaded correctly.');
+      }
       
-      if (result.success && result.data) {
-        console.log('User data fetched successfully:', result.data);
-        
-        // Update profile display
-        if (result.data.user) {
-          console.log('Updating profile with user data:', result.data.user);
-          
-          // Update header with username
-          if (result.data.user[0] && result.data.user[0].login) {
-            const headerTitle = document.querySelector('.nav-left h1');
-            if (headerTitle) {
-              headerTitle.textContent = `Hello, ${result.data.user[0].login}`;
-              // Also update stored username
-              localStorage.setItem('user_username', result.data.user[0].login);
-            }
+      console.log('Using token for GraphQL requests:', token);
+      
+      // First get basic user info to update UI quickly
+      const basicInfoResult = await GraphQL.fetchBasicUserInfo(token);
+      
+      if (basicInfoResult.success && basicInfoResult.data && basicInfoResult.data.user) {
+        // Update user avatar with basic info
+        if (typeof Navigation !== 'undefined') {
+          try {
+            Navigation.setupUserAvatar(basicInfoResult.data.user[0]);
+          } catch (e) {
+            console.error('Error setting up user avatar:', e);
           }
-          
-          Profile.displayProfile(result.data);
-        } else {
-          console.error('No user data found in the response');
-        }
-        
-        // Create XP chart
-        if (result.data.transaction) {
-          console.log('Updating XP chart with transaction data');
-          Charts.createXPChart(result.data.transaction);
         }
       } else {
-        console.error('Failed to load user data:', result.error);
-        throw new Error(result.error || 'Failed to load user data');
+        console.error('Failed to fetch basic user info:', basicInfoResult.error);
+        if (basicInfoResult.error && basicInfoResult.error.includes('JWT')) {
+          // If there's a JWT error, clear the token and show login page
+          Auth.logout();
+          showLoginPage();
+          throw new Error('Authentication token is invalid. Please login again.');
+        }
+      }
+      
+      // Then fetch all user data
+      const allDataResult = await GraphQL.fetchAllUserData(token);
+      
+      if (allDataResult.success && allDataResult.data) {
+        // Update profile display
+        if (typeof Profile !== 'undefined') {
+          try {
+            Profile.displayProfile(allDataResult.data);
+          } catch (e) {
+            console.error('Error displaying profile:', e);
+          }
+        }
+      } else {
+        console.error('Failed to fetch user data:', allDataResult.error);
+        // Show error message
+        const errorEl = document.createElement('div');
+        errorEl.className = 'error-message';
+        errorEl.textContent = 'Failed to load user data: ' + (allDataResult.error || 'Unknown error');
+        errorEl.style.display = 'block';
+        document.body.appendChild(errorEl);
+        
+        // If there's a JWT error, clear the token and show login page
+        if (allDataResult.error && allDataResult.error.includes('JWT')) {
+          Auth.logout();
+          showLoginPage();
+        }
       }
     } catch (error) {
       console.error('Error loading user data:', error);
+      // Show error message
+      const errorEl = document.createElement('div');
+      errorEl.className = 'error-message';
+      errorEl.textContent = 'An error occurred while loading user data: ' + error.message;
+      errorEl.style.display = 'block';
+      document.body.appendChild(errorEl);
       
-      // Check if the error is related to JWT validation
-      if (error.message && (
-        error.message.includes('JWT') || 
-        error.message.includes('token') ||
-        error.message.includes('authentication')
-      )) {
-        console.log('Authentication error detected, logging out...');
-        // Clear any invalid tokens
-        localStorage.removeItem(APP_CONFIG.STORAGE.AUTH_TOKEN);
-        // Show login page
+      // If there's an authentication error, show login page
+      if (error.message.includes('authentication') || error.message.includes('token')) {
+        Auth.logout();
         showLoginPage();
-        // Show friendly error message
-        const errorEl = document.getElementById('login-error');
-        if (errorEl) {
-          errorEl.textContent = 'Your session has expired. Please log in again.';
-          errorEl.style.display = 'block';
-        }
-      } else if (error.message && error.message.includes('404')) {
-        // For 404 errors in test mode, use mock data
-        console.log('GraphQL endpoint not found, using mock data...');
-        const mockData = {
-          user: [{
-            id: 'test-user-id',
-            login: localStorage.getItem('user_username') || 'testuser',
-            attrs: {
-              firstName: 'Test',
-              lastName: 'User',
-              email: 'test@example.com',
-              country: 'Kenya',
-              phone: '+254123456789',
-              gender: 'Other',
-              'ID.NUMBER': 'TEST12345',
-              bio: 'This is a test user profile for development purposes.'
-            },
-            auditRatio: 1.5,
-            totalUp: 25,
-            totalDown: 15,
-            transactions: [
-              {
-                id: 'tx1',
-                type: 'xp',
-                amount: 50000,
-                createdAt: new Date(Date.now() - 86400000).toISOString(),
-                path: '/project/test-project-1'
-              },
-              {
-                id: 'tx2',
-                type: 'xp',
-                amount: 75000,
-                createdAt: new Date(Date.now() - 172800000).toISOString(),
-                path: '/project/test-project-2'
-              }
-            ],
-            progresses: [
-              {
-                id: 'prog1',
-                objectId: 'obj1',
-                grade: 85,
-                createdAt: new Date(Date.now() - 86400000).toISOString(),
-                path: '/project/test-project-1'
-              },
-              {
-                id: 'prog2',
-                objectId: 'obj2',
-                grade: 92,
-                createdAt: new Date(Date.now() - 172800000).toISOString(),
-                path: '/project/test-project-2'
-              }
-            ]
-          }]
-        };
-        
-        // Update profile with mock data
-        Profile.displayProfile({ user: mockData.user });
-        
-        // Update header with username
-        const headerTitle = document.querySelector('.nav-left h1');
-        if (headerTitle) {
-          headerTitle.textContent = `Hello, ${mockData.user[0].login}`;
-        }
-      } else {
-        // For other errors, show a generic message
-        alert(`Error loading user data: ${error.message}`);
       }
     } finally {
       // Hide loading overlay
       if (loadingOverlay) {
         loadingOverlay.classList.add('hidden');
       }
-      isLoading = false;
     }
   }
   

@@ -3,166 +3,452 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Profile Dashboard</title>
+  <title>Zone01 Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Include all CSS files directly -->
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+  <style>
+    /* Inline critical CSS to ensure basic styling works */
+    :root {
+      --color-lightest: #DEF9C4;
+      --color-light: #9CDBA6;
+      --color-medium: #50B498;
+      --color-dark: #468585;
+      --text-color: #333;
+      --text-light: white;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--color-lightest);
+      color: var(--text-color);
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    /* Login styles */
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .login-card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    .login-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    
+    #login-logo {
+      width: 40px;
+      height: 40px;
+      background-color: var(--color-medium);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+      color: white;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    
+    .btn-primary {
+      background-color: var(--color-medium);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+    
+    .error-message {
+      color: #E87A7A;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    
+    /* Main app styles */
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: var(--color-medium);
+      color: white;
+    }
+    
+    .nav-left, .nav-right {
+      display: flex;
+      align-items: center;
+    }
+    
+    .nav-right {
+      gap: 15px;
+    }
+    
+    .content-wrapper {
+      display: flex;
+      height: calc(100vh - 64px);
+    }
+    
+    .sidebar {
+      width: 250px;
+      background-color: var(--color-light);
+      padding: 20px 0;
+    }
+    
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .sidebar .nav-link {
+      display: block;
+      padding: 10px 20px;
+      color: var(--color-dark);
+      text-decoration: none;
+    }
+    
+    .sidebar .nav-link.active {
+      background-color: var(--color-lightest);
+      font-weight: 500;
+    }
+    
+    .main-content {
+      flex: 1;
+      padding: 20px;
+      background-color: var(--color-lightest);
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .card-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .card-content {
+      padding: 20px;
+    }
+    
+    .content-section {
+      display: none;
+    }
+    
+    .content-section.active {
+      display: block;
+    }
+    
+    .dashboard-grid, .statistics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    
+    .btn-secondary {
+      background-color: transparent;
+      border: 1px solid white;
+      color: white;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid var(--color-medium);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+      
+      .hamburger-menu {
+        display: block;
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+      
+      .hamburger-icon {
+        display: block;
+        width: 25px;
+        height: 3px;
+        background-color: white;
+        position: relative;
+      }
+      
+      .hamburger-icon::before,
+      .hamburger-icon::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: white;
+        left: 0;
+      }
+      
+      .hamburger-icon::before {
+        top: -8px;
+      }
+      
+      .hamburger-icon::after {
+        bottom: -8px;
+      }
+      
+      .mobile-dropdown {
+        background-color: var(--color-light);
+        padding: 10px 0;
+      }
+      
+      .dashboard-grid, .statistics-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
-<body class="theme-light">
-  <div id="app">
-    <!-- Login Page -->
-    <div id="login-page" class="login-container">
-      <div class="login-card">
-        <div class="login-header">
-          <h1>Profile Dashboard</h1>
-        </div>
-        <form id="login-form">
-          <div class="form-group">
-            <label for="username">Username or Email</label>
-            <input type="text" id="username" name="username" required>
-          </div>
-          <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
-          </div>
-          <div id="login-error" class="error-message"></div>
-          <button type="submit" class="btn-primary">Login</button>
-        </form>
+<body>
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Login Page -->
+  <div id="login-page" class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div id="login-logo"></div>
+        <h1>Zone01 Dashboard</h1>
       </div>
-    </div>
-
-    <!-- Main Application -->
-    <div id="main-app" class="hidden">
-      <!-- Top Navigation -->
-      <header class="top-nav">
-        <div class="nav-left">
-          <!-- Hamburger Menu Button (Hidden on desktop, shown on mobile) -->
-          <button class="hamburger-menu" aria-label="Toggle navigation menu">
-            <span class="hamburger-icon"></span>
-          </button>
-          <h1>Profile Dashboard</h1>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" class="form-control" placeholder="Enter your username">
         </div>
-        <div class="nav-right">
-          <div class="user-avatar" id="user-avatar"></div>
-          <button id="logout-button" class="btn-secondary">Logout</button>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" class="form-control" placeholder="Enter your password">
         </div>
-      </header>
-
-      <!-- Mobile Dropdown Menu (Hidden by default) -->
-      <div class="mobile-dropdown">
-        <ul>
-          <li><a href="#dashboard" class="nav-link active" data-section="dashboard">Dashboard</a></li>
-          <li><a href="#profile" class="nav-link" data-section="profile">Profile</a></li>
-          <li><a href="#statistics" class="nav-link" data-section="statistics">Statistics</a></li>
-        </ul>
-      </div>
-
-      <div class="content-wrapper">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-          <nav>
-            <ul>
-              <li><a href="#dashboard" class="nav-link active" data-section="dashboard">Dashboard</a></li>
-              <li><a href="#profile" class="nav-link" data-section="profile">Profile</a></li>
-              <li><a href="#statistics" class="nav-link" data-section="statistics">Statistics</a></li>
-            </ul>
-          </nav>
-          <div class="sidebar-toggle" id="sidebar-toggle"></div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-          <!-- Dashboard Section -->
-          <section id="dashboard-section" class="content-section active">
-            <div class="section-header">
-              <h2>Dashboard</h2>
-            </div>
-            <div class="dashboard-grid">
-              <div class="card">
-                <h3>User Overview</h3>
-                <div id="user-overview" class="card-content">
-                  <p class="loading-text">Loading user data...</p>
-                </div>
-              </div>
-              <div class="card">
-                <h3>Skill Distribution</h3>
-                <div id="skills-chart" class="chart-container">
-                  <p class="loading-text">Loading skills data...</p>
-                </div>
-              </div>
-              <div class="card">
-                <h3>Recent Projects</h3>
-                <div id="recent-activity" class="card-content">
-                  <p class="loading-text">Loading activity data...</p>
-                </div>
-              </div>
-              <div class="card">
-                <h3>Audit Overview</h3>
-                <div id="audit-overview" class="card-content">
-                  <p class="loading-text">Loading audit data...</p>
-                </div>
-              </div>              
-            </div>
-          </section>
-
-          <!-- Profile Section -->
-          <section id="profile-section" class="content-section">
-            <div class="section-header">
-              <h2>Profile Information</h2>
-            </div>
-            <div class="card">
-              <div class="card-header">
-                <h3>Personal Details</h3>
-              </div>
-              <div id="profile-display" class="card-content">
-                <p class="loading-text">Loading profile data...</p>
-              </div>
-            </div>
-          </section>
-
-          <!-- Statistics Section -->
-          <section id="statistics-section" class="content-section">
-            <div class="section-header">
-              <h2>Statistics</h2>
-            </div>
-            <div class="statistics-grid">
-              <div class="card special-card">
-                <h3>Audit Ratio</h3>
-                <div id="audit-ratio-chart" class="chart-container">
-                  <p class="loading-text">Loading audit ratio data...</p>
-                </div>
-              </div>
-              <div class="card special-card">
-                <h3>Event Participation</h3>
-                <div id="events-chart" class="chart-container">
-                  <p class="loading-text">Loading events data...</p>
-                </div>
-              </div>
-              <div class="card special-card">
-                <h3>Skills Distribution</h3>
-                <div id="skills-distribution-chart" class="chart-container">
-                  <p class="loading-text">Loading skills distribution data...</p>
-                </div>
-              </div>
-              <div class="card special-card">
-                <h3>Progress Timeline</h3>
-                <div id="progress-timeline" class="chart-container large">
-                  <p class="loading-text">Loading progress timeline data...</p>
-                </div>
-              </div>
-            </div>
-          </section>
-        </main>
-      </div>
-    </div>
-
-    <!-- Loading Overlay -->
-    <div id="loading-overlay" class="loading-overlay hidden">
-      <div class="spinner"></div>
+        <div id="login-error" class="error-message"></div>
+        <button type="submit" class="btn-primary">Login</button>
+      </form>
     </div>
   </div>
 
-  <!-- Scripts -->
+  <!-- Main Application -->
+  <div id="main-app" class="hidden">
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+      <div class="nav-left">
+        <button id="hamburger-menu" class="hamburger-menu">
+          <span class="hamburger-icon"></span>
+        </button>
+        <div id="app-logo"></div>
+        <h1>Zone01 Dashboard</h1>
+      </div>
+      <div class="nav-right">
+        <div id="theme-toggle" class="icon-button" title="Toggle theme">
+          <svg class="icon-light" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="icon-dark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </div>
+        <div id="user-avatar" class="user-avatar"></div>
+        <button id="logout-button" class="btn-secondary">Logout</button>
+      </div>
+    </nav>
+
+    <!-- Mobile Navigation Dropdown -->
+    <div id="mobile-dropdown" class="mobile-dropdown hidden">
+      <ul>
+        <li><a href="#" class="nav-link active" data-section="dashboard">Dashboard</a></li>
+        <li><a href="#" class="nav-link" data-section="profile">Profile</a></li>
+        <li><a href="#" class="nav-link" data-section="statistics">Statistics</a></li>
+      </ul>
+    </div>
+
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <nav>
+          <ul>
+            <li><a href="#" class="nav-link active" data-section="dashboard">Dashboard</a></li>
+            <li><a href="#" class="nav-link" data-section="profile">Profile</a></li>
+            <li><a href="#" class="nav-link" data-section="statistics">Statistics</a></li>
+          </ul>
+        </nav>
+        <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle sidebar"></button>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" class="content-section active">
+          <div class="section-header">
+            <h2>Dashboard</h2>
+          </div>
+          <div class="dashboard-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3>User Overview</h3>
+              </div>
+              <div class="card-content">
+                <div id="user-overview" class="loading-text">Loading user data...</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>Audit Overview</h3>
+              </div>
+              <div class="card-content">
+                <div id="audit-overview" class="loading-text">Loading audit data...</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>Recent Activity</h3>
+              </div>
+              <div class="card-content">
+                <div id="recent-activity" class="loading-text">Loading activity data...</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Profile Section -->
+        <section id="profile-section" class="content-section">
+          <div class="section-header">
+            <h2>User Profile</h2>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Profile Information</h3>
+            </div>
+            <div class="card-content">
+              <div id="profile-display" class="loading-text">Loading profile data...</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Statistics Section -->
+        <section id="statistics-section" class="content-section">
+          <div class="section-header">
+            <h2>Statistics</h2>
+          </div>
+          <div class="statistics-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3>Skills Progress</h3>
+              </div>
+              <div class="card-content">
+                <div id="skills-chart" class="chart-container">
+                  <canvas id="skills-canvas"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>Audit Ratio</h3>
+              </div>
+              <div class="card-content">
+                <div id="audit-ratio-chart" class="chart-container">
+                  <canvas id="audit-ratio-canvas"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>Progress Timeline</h3>
+              </div>
+              <div class="card-content">
+                <div id="progress-chart" class="chart-container large">
+                  <canvas id="progress-canvas"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts - Ensure correct loading order -->
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/graphql.js"></script>
@@ -171,8 +457,9 @@
   <script src="js/components/sidebar.js"></script>
   <script src="js/components/charts.js"></script>
   <script src="js/components/profile.js"></script>
-  <script src="js/ham.js"></script>
   <script src="js/debug.js"></script>
+  <script src="js/test.js"></script>
+  <!-- Load main.js last as it depends on all other modules -->
   <script src="js/main.js"></script>
 </body>
 </html>
