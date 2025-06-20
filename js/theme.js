@@ -18,9 +18,11 @@ const ThemeManager = (function() {
    * @param {string} theme - Theme to apply ('light' or 'dark')
    */
   function applyTheme(theme) {
-    document.body.classList.remove('theme-light', 'theme-dark');
-    document.body.classList.add(`theme-${theme}`);
+    document.body.classList.remove('light-theme', 'dark-theme');
+    document.body.classList.add(`${theme}-theme`);
     localStorage.setItem(USER_THEME, theme);
+    
+    console.log(`Theme applied: ${theme}`);
   }
   
   /**
@@ -30,6 +32,8 @@ const ThemeManager = (function() {
     const currentTheme = getCurrentTheme();
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
     applyTheme(newTheme);
+    
+    console.log(`Theme toggled from ${currentTheme} to ${newTheme}`);
   }
   
   /**
@@ -46,6 +50,14 @@ const ThemeManager = (function() {
       const initialTheme = prefersDarkMode ? 'dark' : 'light';
       applyTheme(initialTheme);
     }
+    
+    // Add event listener to theme toggle button
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      themeToggle.addEventListener('click', toggleTheme);
+    }
+    
+    console.log('Theme initialized:', getCurrentTheme());
   }
   
   // Public API
