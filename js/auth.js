@@ -2,160 +2,106 @@
  * Authentication Module
  */
 const Auth = (function() {
-  const { AUTH_URL } = APP_CONFIG.API;
-  const { AUTH_TOKEN } = APP_CONFIG.STORAGE;
-  
   /**
-   * Login user with credentials
-   * @param {string} username - Username or email
-   * @param {string} password - User password
-   * @return {Promise<Object>} Login result
+   * Attempt to login with username and password
+   * @param {string} username - User's username
+   * @param {string} password - User's password
+   * @return {Promise} - Promise resolving to login result
    */
   async function login(username, password) {
     try {
-      console.log('Attempting login with:', username);
+      console.log(`Attempting login for user: ${username}`);
       
-      // First, test if basic POST requests are working
-      console.log('Testing POST endpoint...');
-      const testResponse = await fetch('/test-post', {
+      // Create Basic Auth header
+      const base64Credentials = btoa(`${username}:${password}`);
+      
+      const response = await fetch(APP_CONFIG.API.BASE_URL + APP_CONFIG.API.AUTH_URL, {
         method: 'POST',
         headers: {
+          'Authorization': `Basic ${base64Credentials}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ test: 'data', username, password }),
-      });
-      
-      console.log('Test response status:', testResponse.status);
-      if (testResponse.ok) {
-        const testData = await testResponse.json();
-        console.log('Test response data:', testData);
-      } else {
-        console.error('Test endpoint failed with status:', testResponse.status);
-      }
-      
-      // Now try the actual login
-      console.log('Using special login endpoint...');
-      const response = await fetch('/api/try-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username, password }),
-        credentials: 'include'
-      });
-      
-      console.log('Login response status:', response.status);
-      
-      // Check if we got a successful response
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Login response data:', data);
-        
-        if (data.success) {
-          console.log('Login successful');
-          
-          // Store token if available
-          if (data.token) {
-            localStorage.setItem(AUTH_TOKEN, data.token);
-          } else if (data.jwt) {
-            localStorage.setItem(AUTH_TOKEN, data.jwt);
-          } else {
-            // If no token is provided, store a session marker
-            localStorage.setItem(AUTH_TOKEN, 'session-active');
-          }
-          
-          localStorage.setItem('user_username', username);
-          return { success: true, data };
-        } else {
-          console.log('Login failed:', data.message || 'Unknown error');
-          return { 
-            success: false, 
-            error: data.message || 'Authentication failed. Please check your credentials.' 
-          };
         }
-      } else {
-        // Handle error response
-        let errorMessage = 'Authentication failed. Please check your credentials.';
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Login response error:', errorText);
         
+        // Try to parse error message
         try {
-          const errorData = await response.json();
-          if (errorData.error) {
-            errorMessage = errorData.error;
+          const errorData = JSON.parse(errorText);
+          if (errorData && errorData.error) {
+            throw new Error(errorData.error);
           }
         } catch (e) {
-          // If not JSON, try to get text
-          try {
-            const errorText = await response.text();
-            if (errorText) {
-              errorMessage = errorText.length > 100 ? 
-                errorText.substring(0, 100) + '...' : errorText;
-            }
-          } catch (textError) {
-            // If we can't get text either, use status code
-            errorMessage = `Authentication failed with status ${response.status}`;
-          }
+          // If parsing fails, use the default error message
         }
         
-        return { success: false, error: errorMessage };
+        throw new Error(`Login failed: ${response.status} ${response.statusText}`);
+      }
+      
+      // Get the response as text first to inspect it
+      const responseText = await response.text();
+      console.log('Raw login response:', responseText);
+      
+      // Try to parse as JSON if possible
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        // If it's not valid JSON, the token might be directly returned as text
+        data = { token: responseText };
+      }
+      
+      // Check if we have a token
+      if (data && (data.token || typeof data === 'string')) {
+        // Store token in localStorage - handle both object with token property and direct string token
+        const token = data.token || data;
+        localStorage.setItem(APP_CONFIG.STORAGE.AUTH_TOKEN, token);
+        console.log('Login successful, token stored');
+        return { success: true };
+      } else {
+        throw new Error('Invalid response from authentication server');
       }
     } catch (error) {
       console.error('Login error:', error);
       return { 
         success: false, 
-        error: error.message || 'An error occurred during login. Please try again.' 
+        error: error.message || 'An error occurred during login' 
       };
     }
   }
   
   /**
    * Check if user is authenticated
-   * @return {boolean} Authentication status
+   * @return {boolean} - True if authenticated
    */
   function isAuthenticated() {
-    const token = localStorage.getItem(AUTH_TOKEN);
+    const token = getToken();
     return !!token;
   }
   
   /**
-   * Get the authentication token
-   * @return {string|null} JWT token or null if not authenticated
+   * Get authentication token
+   * @return {string|null} - JWT token or null
    */
   function getToken() {
-    return localStorage.getItem(AUTH_TOKEN);
+    return localStorage.getItem(APP_CONFIG.STORAGE.AUTH_TOKEN);
   }
   
   /**
-   * Logout user by removing token
+   * Logout user
    */
   function logout() {
-    console.log('Logging out user...');
-    localStorage.removeItem(AUTH_TOKEN);
-    console.log('Token removed from localStorage');
-    
-    // Force page reload to reset application state
-    window.location.href = window.location.origin;
-  }
-  
-  /**
-   * Get the current username if available
-   * @return {string|null} Username or null if not available
-   */
-  function getUsername() {
-    // Try to get username from localStorage if we've stored it
-    const storedUsername = localStorage.getItem('user_username');
-    if (storedUsername) {
-      return storedUsername;
-    }
-    
-    return null;
+    localStorage.removeItem(APP_CONFIG.STORAGE.AUTH_TOKEN);
+    console.log('User logged out, token removed');
   }
   
   // Public API
   return {
     login,
-    logout,
     isAuthenticated,
     getToken,
-    getUsername
+    logout
   };
 })();
