@@ -2,7 +2,8 @@
  * GraphQL Client Module
  */
 const GraphQL = (function() {
-  const { GRAPHQL_URL } = APP_CONFIG.API;
+  // Use the full URL for GraphQL endpoint
+  const GRAPHQL_URL = APP_CONFIG.API.BASE_URL + APP_CONFIG.API.GRAPHQL_URL;
   
   /**
    * Execute a GraphQL query or mutation
@@ -17,45 +18,7 @@ const GraphQL = (function() {
         throw new Error('Authentication token is required');
       }
       
-      // Check if we're in test mode
-      if (token === 'test-token-123') {
-        console.log('Using test mode for GraphQL execution');
-        
-        // Check if this is a basic user info query
-        if (query.includes('user {') && query.includes('id') && query.includes('login')) {
-          return {
-            success: true,
-            data: {
-              user: [{
-                id: 'test-user-id',
-                login: localStorage.getItem('user_username') || 'testuser'
-              }]
-            }
-          };
-        }
-        
-        // Check if this is an update user attributes mutation
-        if (query.includes('mutation UpdateUserAttrs') && query.includes('updateUser')) {
-          const attrs = variables.attrs || {};
-          return {
-            success: true,
-            data: {
-              updateUser: {
-                id: 'test-user-id',
-                attrs: attrs
-              }
-            }
-          };
-        }
-        
-        // Default test response
-        return {
-          success: true,
-          data: {
-            result: 'Test mode response'
-          }
-        };
-      }
+      console.log(`Making GraphQL request to: ${GRAPHQL_URL}`);
       
       const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
@@ -69,15 +32,27 @@ const GraphQL = (function() {
         })
       });
       
-      if (!response.ok) {
+      // First check if we got a JSON response
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // If not JSON, it's likely an HTML error page or other non-GraphQL response
         const errorText = await response.text();
-        throw new Error(`GraphQL request failed: ${errorText}`);
+        console.error('Non-JSON response received:', errorText.substring(0, 150) + '...');
+        throw new Error('Invalid GraphQL endpoint or authentication issue');
       }
       
       const data = await response.json();
       console.log('GraphQL response:', data);
+      
       if (data.errors) {
-        throw new Error(data.errors[0].message || 'GraphQL query returned errors');
+        // Check if it's a JWT error
+        const errorMessage = data.errors[0].message || 'GraphQL query returned errors';
+        if (errorMessage.includes('JWT') || errorMessage.includes('token')) {
+          // Clear the invalid token
+          localStorage.removeItem(APP_CONFIG.STORAGE.AUTH_TOKEN);
+          console.error('JWT token error detected, token cleared');
+        }
+        throw new Error(errorMessage);
       }
       
       return { success: true, data: data.data };
@@ -91,206 +66,22 @@ const GraphQL = (function() {
   }
   
   /**
-   * Fetch user profile data from GraphQL API
-   * @param {string} token - Authentication token
-   * @return {Promise<Object>} GraphQL query result
+   * Fetch user profile data
+   * @param {string} token - JWT token
+   * @return {Promise} - Promise resolving to user data
    */
-  async function fetchUserProfile(token) {
-    try {
-      console.log('Fetching user profile data...');
-      
-      // Check if we're in test mode (using our test token)
-      if (token === 'test-token-123') {
-        console.log('Using test mode for user profile data');
-        return getMockUserData();
-      }
-      
-      // If not in test mode, use the real GraphQL API
-      const query = `
-        query {
-          user {
-            id
-            login
-            attrs
-            auditRatio
-            totalUp
-            totalDown
-            transactions(order_by: {createdAt: desc}, limit: 10) {
-              id
-              type
-              amount
-              createdAt
-              path
-            }
-            progresses(order_by: {createdAt: desc}, limit: 15) {
-              id
-              objectId
-              grade
-              createdAt
-              path
-            }
-            audits(where: {grade: {_is_null: true}}, limit: 5) {
-              id
-              grade
-              group {
-                id
-                path
-                captainLogin
-                members {
-                  id
-                  login
-                }
-              }
-              private
-              createdAt
-              updatedAt
-              closedAt
-            }
-          }
+  function fetchUserProfile(token) {
+    const query = `
+      query {
+        user {
+          id
+          login
+          attrs
         }
-      `;
-      
-      // Make the GraphQL request
-      const response = await fetch(GRAPHQL_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ query })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`GraphQL request failed with status ${response.status}`);
       }
-      
-      const result = await response.json();
-      
-      if (result.errors) {
-        throw new Error(result.errors[0].message || 'GraphQL query returned errors');
-      }
-      
-      console.log('GraphQL data received:', result.data);
-      
-      return { 
-        success: true, 
-        data: result.data 
-      };
-    } catch (error) {
-      console.error('GraphQL fetch error:', error);
-      
-      // If we get an error, fall back to mock data in development
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        console.log('Falling back to mock data due to GraphQL error');
-        return getMockUserData();
-      }
-      
-      return { 
-        success: false, 
-        error: error.message 
-      };
-    }
-  }
-
-  /**
-   * Get mock user data for testing
-   * @return {Object} Mock user data
-   */
-  function getMockUserData() {
-    return {
-      success: true,
-      data: {
-        user: [{
-          id: 'test-user-id',
-          login: localStorage.getItem('user_username') || 'testuser',
-          attrs: {
-            firstName: 'Test',
-            lastName: 'User',
-            email: 'test@example.com',
-            country: 'Kenya',
-            phone: '+254123456789',
-            gender: 'Other',
-            'ID.NUMBER': 'TEST12345',
-            bio: 'This is a test user profile for development purposes.'
-          },
-          auditRatio: 1.5,
-          totalUp: 25,
-          totalDown: 15,
-          transactions: [
-            {
-              id: 'tx1',
-              type: 'xp',
-              amount: 50000,
-              createdAt: new Date(Date.now() - 86400000).toISOString(),
-              path: '/project/test-project-1'
-            },
-            {
-              id: 'tx2',
-              type: 'xp',
-              amount: 75000,
-              createdAt: new Date(Date.now() - 172800000).toISOString(),
-              path: '/project/test-project-2'
-            },
-            {
-              id: 'tx3',
-              type: 'xp',
-              amount: 120000,
-              createdAt: new Date(Date.now() - 259200000).toISOString(),
-              path: '/project/test-project-3'
-            }
-          ],
-          progresses: [
-            {
-              id: 'prog1',
-              objectId: 'obj1',
-              grade: 85,
-              createdAt: new Date(Date.now() - 86400000).toISOString(),
-              path: '/project/test-project-1'
-            },
-            {
-              id: 'prog2',
-              objectId: 'obj2',
-              grade: 92,
-              createdAt: new Date(Date.now() - 172800000).toISOString(),
-              path: '/project/test-project-2'
-            },
-            {
-              id: 'prog3',
-              objectId: 'obj3',
-              grade: 78,
-              createdAt: new Date(Date.now() - 259200000).toISOString(),
-              path: '/project/test-project-3'
-            },
-            {
-              id: 'prog4',
-              objectId: 'obj4',
-              grade: 88,
-              createdAt: new Date(Date.now() - 345600000).toISOString(),
-              path: '/project/test-project-4'
-            }
-          ],
-          audits: [
-            {
-              id: 'audit1',
-              grade: null,
-              group: {
-                id: 'group1',
-                path: '/project/test-audit-1',
-                captainLogin: 'captain1',
-                members: [
-                  { id: 'member1', login: 'member1' },
-                  { id: 'member2', login: 'member2' }
-                ]
-              },
-              private: { code: 'ABC123' },
-              createdAt: new Date(Date.now() - 86400000).toISOString(),
-              updatedAt: new Date(Date.now() - 43200000).toISOString(),
-              closedAt: null
-            }
-          ]
-        }]
-      }
-    };
+    `;
+    
+    return execute(query, {}, token);
   }
   
   /**
@@ -299,20 +90,6 @@ const GraphQL = (function() {
    * @return {Promise} - Promise resolving to basic user info
    */
   function fetchBasicUserInfo(token) {
-    // Check if we're in test mode
-    if (token === 'test-token-123') {
-      console.log('Using test mode for basic user info');
-      return Promise.resolve({
-        success: true,
-        data: {
-          user: [{
-            id: 'test-user-id',
-            login: localStorage.getItem('user_username') || 'testuser'
-          }]
-        }
-      });
-    }
-    
     const query = `
       query {
         user {
@@ -344,11 +121,21 @@ const GraphQL = (function() {
     return execute(mutation, { attrs }, token);
   }
   
+  /**
+   * Fetch all user data
+   * @param {string} token - JWT token
+   * @return {Promise} - Promise resolving to all user data
+   */
+  function fetchAllUserData(token) {
+    return fetchUserProfile(token);
+  }
+  
   // Public API
   return {
     execute,
     fetchUserProfile,
     fetchBasicUserInfo,
-    updateUserAttributes
+    updateUserAttributes,
+    fetchAllUserData
   };
 })();
