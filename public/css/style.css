@@ -13,6 +13,7 @@
     --audit-done-color: #4CAF50;
     --audit-received-color: #2196F3;
     --chart-grid-color: rgba(255, 255, 255, 0.1);
+    --chart-line-color: #6d73e7;
     --border-color: rgba(255, 255, 255, 0.1);
     --text-muted: rgba(255, 255, 255, 0.6);
 }
