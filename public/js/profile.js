@@ -162,6 +162,9 @@ async function fetchProfileData() {
                 id
                 login
                 attrs
+                totalUp
+                totalUpBonus
+                 totalDown
             }
         }
     `;
@@ -202,7 +205,19 @@ async function fetchProfileData() {
         // Display skills data
         displaySkills(responseData.data.skills, responseData.data.skillSummary);
 
-        // Calculate different types of XP
+        // Get user data for direct XP values
+        const userData = responseData.data.user[0];
+        
+        // Calculate total XP got (totalUp + totalUpBonus)
+        const totalXPGot = (userData.totalUp || 0) + (userData.totalUpBonus || 0);
+        
+        // Total XP done is totalDown
+        const totalXPDone = userData.totalDown || 0;
+        
+        // Calculate audit ratio directly from the response
+        const auditRatio = totalXPDone > 0 ? (totalXPGot / totalXPDone).toFixed(2) : 'N/A';
+
+        // Calculate different types of XP for breakdown display
         const moduleXPTotal = moduleXP.reduce((sum, t) => sum + t.amount, 0) || 0;
         const piscineGoTotal = piscineGoXP.reduce((sum, t) => sum + t.amount, 0) || 0;
         const piscineJsTotal = piscineJsXP.reduce((sum, t) => sum + t.amount, 0) || 0;
@@ -210,31 +225,31 @@ async function fetchProfileData() {
         const piscineUiTotal = piscineUiXP.reduce((sum, t) => sum + t.amount, 0) || 0;
         const piscineRustTotal = piscineRustXP.reduce((sum, t) => sum + t.amount, 0) || 0;
 
-        // Update UI with separated XP values
+        // Update UI with XP values using direct totals from response
         document.getElementById('xp').innerHTML = `
+            <div><strong>Total XP Got:</strong> ${(totalXPGot / 1000).toFixed(2)} kB</div>
+            <div><strong>Total XP Done:</strong> ${(totalXPDone / 1000).toFixed(2)} kB</div>
+            <div><strong>Audit Ratio:</strong> ${auditRatio}</div>
+            <hr style="margin: 10px 0; border: 1px solid var(--border-color);">
             <div>Module XP: ${(moduleXPTotal / 1000).toFixed(2)} kB</div>
             <div>Piscine Go XP: ${(piscineGoTotal / 1000).toFixed(2)} kB</div>
             <div>Piscine JS XP: ${(piscineJsTotal / 1000).toFixed(2)} kB</div>
             <div>Piscine UX XP: ${(piscineUxTotal / 1000).toFixed(2)} kB</div>
             <div>Piscine UI XP: ${(piscineUiTotal / 1000).toFixed(2)} kB</div>
             <div>Piscine Rust XP: ${(piscineRustTotal / 1000).toFixed(2)} kB</div>
-            <div>Total XP: ${((moduleXPTotal + piscineGoTotal + piscineJsTotal + piscineUxTotal + piscineUiTotal + piscineRustTotal) / 1000).toFixed(2)} kB</div>
         `;
 
-        // Calculate audit statistics
-        const auditsDone = responseData.data.auditsDone || [];
-        const auditsReceived = responseData.data.auditsReceived || [];
-
-        // Update the audit ratios visualization
+        // Update the audit ratios visualization using direct values
         updateAuditRatios({
             done: {
-                count: auditsDone.length,
-                amount: auditsDone.reduce((sum, audit) => sum + audit.amount, 0)
+                count: 'N/A', // We don't have count from direct values
+                amount: totalXPGot
             },
             received: {
-                count: auditsReceived.length,
-                amount: auditsReceived.reduce((sum, audit) => sum + audit.amount, 0)
-            }
+                count: 'N/A', // We don't have count from direct values
+                amount: totalXPDone
+            },
+            ratio: auditRatio
         });
 
         // Generate graphs after data is loaded
@@ -407,9 +422,9 @@ function updateAuditRatios(auditData) {
     const centerY = height / 2;
     const radius = Math.min(width, height) / 2 - 40; // Leave some padding
 
-    const total = auditData.done.count + auditData.received.count;
+    const totalAmount = auditData.done.amount + auditData.received.amount;
     
-    if (total === 0) {
+    if (totalAmount === 0) {
         // Show empty state
         const emptyText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         emptyText.setAttribute('x', centerX);
@@ -422,9 +437,9 @@ function updateAuditRatios(auditData) {
         return;
     }
 
-    // Calculate angles for pie slices
-    const doneAngle = (auditData.done.count / total) * 2 * Math.PI;
-    const receivedAngle = (auditData.received.count / total) * 2 * Math.PI;
+    // Calculate angles for pie slices based on amounts
+    const doneAngle = (auditData.done.amount / totalAmount) * 2 * Math.PI;
+    const receivedAngle = (auditData.received.amount / totalAmount) * 2 * Math.PI;
 
     // Helper function to create pie slice path
     function createPieSlice(startAngle, endAngle, radius, centerX, centerY) {
@@ -441,8 +456,8 @@ function updateAuditRatios(auditData) {
     // Create pie slices
     let currentAngle = -Math.PI / 2; // Start from top
 
-    // Done slice
-    if (auditData.done.count > 0) {
+    // Done slice (XP Got)
+    if (auditData.done.amount > 0) {
         const doneSlice = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         const endAngle = currentAngle + doneAngle;
         doneSlice.setAttribute('d', createPieSlice(currentAngle, endAngle, radius, centerX, centerY));
@@ -454,8 +469,8 @@ function updateAuditRatios(auditData) {
         currentAngle = endAngle;
     }
 
-    // Received slice
-    if (auditData.received.count > 0) {
+    // Received slice (XP Done)
+    if (auditData.received.amount > 0) {
         const receivedSlice = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         const endAngle = currentAngle + receivedAngle;
         receivedSlice.setAttribute('d', createPieSlice(currentAngle, endAngle, radius, centerX, centerY));
@@ -476,8 +491,7 @@ function updateAuditRatios(auditData) {
     centerCircle.setAttribute('stroke-width', '1');
     svg.appendChild(centerCircle);
 
-    // Add center text showing ratio
-    const ratio = auditData.received.count > 0 ? (auditData.done.count / auditData.received.count).toFixed(2) : 'N/A';
+    // Add center text showing ratio (use the direct ratio from the data)
     const centerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     centerText.setAttribute('x', centerX);
     centerText.setAttribute('y', centerY - 5);
@@ -486,15 +500,15 @@ function updateAuditRatios(auditData) {
     centerText.setAttribute('class', 'audit-ratio-text');
     centerText.setAttribute('font-size', '14');
     centerText.setAttribute('font-weight', 'bold');
-    centerText.textContent = `Ratio: ${ratio}`;
+    centerText.textContent = `Ratio: ${auditData.ratio}`;
     svg.appendChild(centerText);
 
     // Add legend
     const legendY = height - 30;
-    const legendSpacing = 120;
+    const legendSpacing = 140;
     const legendStartX = centerX - legendSpacing;
 
-    // Done legend
+    // XP Got legend
     const doneRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     doneRect.setAttribute('x', legendStartX);
     doneRect.setAttribute('y', legendY);
@@ -508,10 +522,10 @@ function updateAuditRatios(auditData) {
     doneText.setAttribute('y', legendY + 9);
     doneText.setAttribute('class', 'audit-label');
     doneText.setAttribute('font-size', '12');
-    doneText.textContent = `Done: ${auditData.done.count}`;
+    doneText.textContent = `XP Got: ${(auditData.done.amount / 1000).toFixed(1)}k`;
     svg.appendChild(doneText);
 
-    // Received legend
+    // XP Done legend
     const receivedRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     receivedRect.setAttribute('x', legendStartX + legendSpacing);
     receivedRect.setAttribute('y', legendY);
@@ -525,7 +539,7 @@ function updateAuditRatios(auditData) {
     receivedText.setAttribute('y', legendY + 9);
     receivedText.setAttribute('class', 'audit-label');
     receivedText.setAttribute('font-size', '12');
-    receivedText.textContent = `Received: ${auditData.received.count}`;
+    receivedText.textContent = `XP Done: ${(auditData.received.amount / 1000).toFixed(1)}k`;
     svg.appendChild(receivedText);
 }
 
