@@ -225,18 +225,15 @@ async function fetchProfileData() {
         const piscineUiTotal = piscineUiXP.reduce((sum, t) => sum + t.amount, 0) || 0;
         const piscineRustTotal = piscineRustXP.reduce((sum, t) => sum + t.amount, 0) || 0;
 
-        // Update UI with XP values using direct totals from response
+        // Update UI with separated XP values
         document.getElementById('xp').innerHTML = `
-            <div><strong>Total XP Got:</strong> ${(totalXPGot / 1000).toFixed(2)} kB</div>
-            <div><strong>Total XP Done:</strong> ${(totalXPDone / 1000).toFixed(2)} kB</div>
-            <div><strong>Audit Ratio:</strong> ${auditRatio}</div>
-            <hr style="margin: 10px 0; border: 1px solid var(--border-color);">
             <div>Module XP: ${(moduleXPTotal / 1000).toFixed(2)} kB</div>
             <div>Piscine Go XP: ${(piscineGoTotal / 1000).toFixed(2)} kB</div>
             <div>Piscine JS XP: ${(piscineJsTotal / 1000).toFixed(2)} kB</div>
             <div>Piscine UX XP: ${(piscineUxTotal / 1000).toFixed(2)} kB</div>
             <div>Piscine UI XP: ${(piscineUiTotal / 1000).toFixed(2)} kB</div>
             <div>Piscine Rust XP: ${(piscineRustTotal / 1000).toFixed(2)} kB</div>
+            <div>Total XP: ${((moduleXPTotal + piscineGoTotal + piscineJsTotal + piscineUxTotal + piscineUiTotal + piscineRustTotal) / 1000).toFixed(2)} kB</div>
         `;
 
         // Update the audit ratios visualization using direct values
