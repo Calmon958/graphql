@@ -227,13 +227,13 @@ async function fetchProfileData() {
 
         // Update UI with separated XP values
         document.getElementById('xp').innerHTML = `
-            <div>Module XP: ${(moduleXPTotal / 1000).toFixed(2)} kB</div>
-            <div>Piscine Go XP: ${(piscineGoTotal / 1000).toFixed(2)} kB</div>
-            <div>Piscine JS XP: ${(piscineJsTotal / 1000).toFixed(2)} kB</div>
-            <div>Piscine UX XP: ${(piscineUxTotal / 1000).toFixed(2)} kB</div>
-            <div>Piscine UI XP: ${(piscineUiTotal / 1000).toFixed(2)} kB</div>
-            <div>Piscine Rust XP: ${(piscineRustTotal / 1000).toFixed(2)} kB</div>
-            <div>Total XP: ${((moduleXPTotal + piscineGoTotal + piscineJsTotal + piscineUxTotal + piscineUiTotal + piscineRustTotal) / 1000).toFixed(2)} kB</div>
+            <div>Module XP: ${(moduleXPTotal / (1000 * 1000)).toFixed(2)} MB</div>
+            <div>Piscine Go XP: ${(piscineGoTotal / (1000 * 1000)).toFixed(2)} MB</div>
+            <div>Piscine JS XP: ${(piscineJsTotal / (1000 * 1000)).toFixed(2)} MB</div>
+            <div>Piscine UX XP: ${(piscineUxTotal / (1000 * 1000)).toFixed(2)} MB</div>
+            <div>Piscine UI XP: ${(piscineUiTotal / (1000 * 1000)).toFixed(2)} MB</div>
+            <div>Piscine Rust XP: ${(piscineRustTotal / (1000 * 1000)).toFixed(2)} MB</div>
+            <div>Total XP: ${((moduleXPTotal + piscineGoTotal + piscineJsTotal + piscineUxTotal + piscineUiTotal + piscineRustTotal) / (1000 * 1000)).toFixed(2)} MB</div>
         `;
 
         // Update the audit ratios visualization using direct values
@@ -379,13 +379,13 @@ function generateGraphs() {
         for (let i = 0; i <= gridLines; i++) {
             const y = padding.top + (i / gridLines) * (xpHeight - padding.top - padding.bottom);
             const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            const value = ((gridLines - i) / gridLines * maxXP / 1000).toFixed(1);
+            const value = ((gridLines - i) / gridLines * maxXP / (1000 * 1000)).toFixed(1);
             label.setAttribute('x', padding.left - 10);
             label.setAttribute('y', y);
             label.setAttribute('text-anchor', 'end');
             label.setAttribute('alignment-baseline', 'middle');
             label.setAttribute('class', 'chart-label');
-            label.textContent = `${value}k`;
+            label.textContent = `${value} MB`;
             xpSvg.appendChild(label);
         }
 
@@ -519,7 +519,7 @@ function updateAuditRatios(auditData) {
     doneText.setAttribute('y', legendY + 9);
     doneText.setAttribute('class', 'audit-label');
     doneText.setAttribute('font-size', '12');
-    doneText.textContent = `XP Got: ${(auditData.done.amount / 1000).toFixed(1)}k`;
+    doneText.textContent = `XP Got: ${(auditData.done.amount / (1000 * 1000)).toFixed(1)} MB`;
     svg.appendChild(doneText);
 
     // XP Done legend
@@ -536,7 +536,7 @@ function updateAuditRatios(auditData) {
     receivedText.setAttribute('y', legendY + 9);
     receivedText.setAttribute('class', 'audit-label');
     receivedText.setAttribute('font-size', '12');
-    receivedText.textContent = `XP Done: ${(auditData.received.amount / 1000).toFixed(1)}k`;
+    receivedText.textContent = `XP Done: ${(auditData.received.amount / (1000 * 1000)).toFixed(1)} MB`;
     svg.appendChild(receivedText);
 }
 
