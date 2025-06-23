@@ -8,6 +8,19 @@ const isDevelopment = false;
   // Main application state
   let isInitialized = false;
   
+  // Add loading state management:
+  const LoadingManager = {
+    show() {
+      const overlay = document.getElementById('loading-overlay');
+      if (overlay) overlay.classList.remove('hidden');
+    },
+    
+    hide() {
+      const overlay = document.getElementById('loading-overlay');
+      if (overlay) overlay.classList.add('hidden');
+    }
+  };
+
   /**
    * Initialize the application
    */
@@ -91,11 +104,7 @@ const isDevelopment = false;
             }
           }
         } catch (error) {
-          console.error('Login error:', error);
-          if (errorEl) {
-            errorEl.textContent = 'An unexpected error occurred. Please try again.';
-            errorEl.style.display = 'block';
-          }
+          handleError(error, 'Login');
         } finally {
           // Restore button state
           if (submitBtn) {
@@ -245,24 +254,46 @@ const isDevelopment = false;
         }
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
-      // Show error message
-      const errorEl = document.createElement('div');
-      errorEl.className = 'error-message';
-      errorEl.textContent = 'An error occurred while loading user data: ' + error.message;
-      errorEl.style.display = 'block';
-      document.body.appendChild(errorEl);
-      
-      // If there's an authentication error, show login page
-      if (error.message.includes('authentication') || error.message.includes('token')) {
-        Auth.logout();
-        showLoginPage();
-      }
+      handleError(error, 'Load User Data');
     } finally {
       // Hide loading overlay
       if (loadingOverlay) {
         loadingOverlay.classList.add('hidden');
       }
+    }
+  }
+  
+  /**
+   * Handle errors and display appropriate messages
+   */
+  function handleError(error, context) {
+    console.error(`Error in ${context}:`, error);
+    
+    // Check for authentication errors
+    if (error.message?.includes('JWT') || error.message?.includes('token')) {
+      Auth.logout();
+      showLoginPage();
+      showError('Your session has expired. Please login again.');
+      return;
+    }
+    
+    // Show error message to user
+    showError(error.message || 'An unexpected error occurred');
+  }
+
+  /**
+   * Show error message to the user
+   */
+  function showError(message) {
+    const errorEl = document.getElementById('error-message');
+    if (errorEl) {
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        errorEl.style.display = 'none';
+      }, 5000);
     }
   }
   
