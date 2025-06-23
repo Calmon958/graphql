@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>GraphiQL</title>
+    <link 
+      rel="stylesheet" 
+      href="https://cdn.jsdelivr.net/npm/graphiql@2.4.7/graphiql.min.css"
+      integrity="sha256-OsbM+LQHcnFHi0iH7AUKueZvDcEBoy/z4hJ7jx1cpsM="
+      crossorigin="anonymous"
+    />
+  </head>
+  <body style="margin: 0;">
+    <div id="token-status" style="padding: 10px; background: #f0f0f0;"></div>
+    <div id="graphiql" style="height: calc(100vh - 40px);"></div>
+    <script 
+      src="https://cdn.jsdelivr.net/npm/react@17.0.2/umd/react.production.min.js"
+      integrity="sha256-Ipu/TQ50iCCVZBUsZyNJfxrDk0E2yhaEIz0vqI+kFG8="
+      crossorigin="anonymous"></script>
+    <script 
+      src="https://cdn.jsdelivr.net/npm/react-dom@17.0.2/umd/react-dom.production.min.js"
+      integrity="sha256-nbMykgB6tsOFJ7OdVmPpdqMFVk4ZsqWocT6issAPUF0="
+      crossorigin="anonymous"></script>
+    <script 
+      src="https://cdn.jsdelivr.net/npm/graphiql@2.4.7/graphiql.min.js"
+      integrity="sha256-n/LKaELupC1H/PU6joz+ybeRJHT2xCdekEt6OYMOOZU="
+      crossorigin="anonymous"></script>
+    <script>
+      // Check token status
+      function updateTokenStatus() {
+        const token = localStorage.getItem('hasura_jwt_token');
+        const statusDiv = document.getElementById('token-status');
+        
+        if (!token) {
+          statusDiv.style.backgroundColor = '#ffebee';
+          statusDiv.innerHTML = 'Error: No JWT token found. Please <a href="/index.html">log in first</a>.';
+          return false;
+        }
+        
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+          statusDiv.style.backgroundColor = '#ffebee';
+          statusDiv.innerHTML = 'Error: Invalid JWT token format. Please <a href="/index.html">log in again</a>.';
+          return false;
+        }
+        
+        statusDiv.style.backgroundColor = '#e8f5e9';
+        statusDiv.innerHTML = 'Token found and valid format detected. You can now make queries.';
+        return true;
+      }
+
+      // Define the fetcher function
+      function fetchGraphQL(params) {
+        const token = localStorage.getItem('hasura_jwt_token');
+        
+        if (!updateTokenStatus()) {
+          return Promise.reject(new Error('Invalid token state'));
+        }
+        
+        return fetch(
+          "https://learn.zone01kisumu.ke/api/graphql-engine/v1/graphql",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify(params),
+          }
+        ).then((response) => response.json());
+      }
+
+      // Only render if we have a token
+      if (updateTokenStatus()) {
+        ReactDOM.render(
+          React.createElement(GraphiQL, {
+            fetcher: fetchGraphQL,
+            defaultQuery: `query {
+              user {
+                id
+                login
+              }
+            }`
+          }),
+          document.getElementById("graphiql")
+        );
+      }
+    </script>
+  </body>
+</html>
