@@ -1,0 +1,13 @@
+const ENV = {
+  development: {
+    API_URL: 'http://localhost:3000',
+    USE_MOCK_DATA: true
+  },
+  production: {
+    API_URL: 'https://01.kood.tech',
+    USE_MOCK_DATA: false
+  }
+};
+
+const currentEnv = isDevelopment ? 'development' : 'production';
+const config = ENV[currentEnv];
