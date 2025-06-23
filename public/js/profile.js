@@ -39,18 +39,12 @@ async function fetchProfileData() {
             }
 
             skills: transaction(
-                where: {
-                    type: {_like: "skill_%"}
-                },
-                order_by: {
-                    createdAt: desc
-                }
+                order_by: [{type: desc}, {amount: desc}]
+                distinct_on: [type]
+                where: {type: {_like: "skill_%"}}
             ) {
-                id
                 type
                 amount
-                createdAt
-                path
             }
 
             exercises: progress(
@@ -257,46 +251,37 @@ function displaySkills(skills, skillSummary) {
     // Clear previous content
     skillsContainer.innerHTML = '';
 
-    // Group and sum skills by type
+    // Process skills data - data is already ordered by amount desc from the query
     if (skills && skills.length > 0) {
-        const groupedSkills = skills.reduce((acc, skill) => {
+        const skillsHtml = skills.map(skill => {
             const skillType = skill.type.replace('skill_', '').replace(/_/g, ' ');
-            if (!acc[skillType]) {
-                acc[skillType] = 0;
-            }
-            acc[skillType] += skill.amount;
-            return acc;
-        }, {});
+            const amount = skill.amount;
+            
+            // Calculate percentage for the circle (capped at 100)
+            const percentage = Math.min(amount, 100);
+            const radius = 36;
+            const circumference = 2 * Math.PI * radius;
+            const offset = circumference - (percentage / 100) * circumference;
 
-        // Convert to array and sort by amount
-        const skillsHtml = Object.entries(groupedSkills)
-            .sort((a, b) => b[1] - a[1]) // Sort by amount in descending order
-            .map(([type, amount]) => {
-                // Calculate percentage for the circle (capped at 100)
-                const percentage = Math.min(amount, 100);
-                const radius = 36;
-                const circumference = 2 * Math.PI * radius;
-                const offset = circumference - (percentage / 100) * circumference;
-
-                return `
-                    <div class="skill-item">
-                        <div class="skill-progress-circle">
-                            <svg viewBox="0 0 80 80">
-                                <circle class="skill-progress-background"
-                                    cx="40" cy="40" r="${radius}"
-                                />
-                                <circle class="skill-progress-value"
-                                    cx="40" cy="40" r="${radius}"
-                                    stroke-dasharray="${circumference}"
-                                    stroke-dashoffset="${offset}"
-                                />
-                            </svg>
-                            <span class="skill-amount">${amount.toFixed(0)}</span>
-                        </div>
-                        <span class="skill-name">${type}</span>
+            return `
+                <div class="skill-item">
+                    <div class="skill-progress-circle">
+                        <svg viewBox="0 0 80 80">
+                            <circle class="skill-progress-background"
+                                cx="40" cy="40" r="${radius}"
+                            />
+                            <circle class="skill-progress-value"
+                                cx="40" cy="40" r="${radius}"
+                                stroke-dasharray="${circumference}"
+                                stroke-dashoffset="${offset}"
+                            />
+                        </svg>
+                        <span class="skill-amount">${amount.toFixed(0)}</span>
                     </div>
-                `;
-            }).join('');
+                    <span class="skill-name">${skillType}</span>
+                </div>
+            `;
+        }).join('');
 
         skillsContainer.innerHTML = skillsHtml;
     } else {
