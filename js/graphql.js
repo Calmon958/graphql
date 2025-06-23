@@ -76,7 +76,25 @@ const GraphQL = (function() {
         user {
           id
           login
-          attrs
+          email
+          firstName
+          lastName
+          auditRatio
+          totalUp
+          totalDown
+          createdAt
+          profile {
+            xps {
+              amount
+              path
+              createdAt
+            }
+            audits {
+              amount
+              path
+              createdAt
+            }
+          }
         }
       }
     `;
