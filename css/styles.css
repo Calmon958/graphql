@@ -133,6 +133,14 @@ a:hover {
   100% { transform: rotate(360deg); }
 }
 
+/* Dashboard Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin: var(--spacing-md) 0;
+}
+
 /* Button Styles */
 .btn-primary {
   background-color: var(--color-medium);
