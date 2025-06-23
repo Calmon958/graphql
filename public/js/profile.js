@@ -440,50 +440,130 @@ function updateAuditRatios(auditData) {
 
     svg.innerHTML = '';
 
-    const padding = 40;
-    const barWidth = (width - padding * 3) / 2;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(width, height) / 2 - 40; // Leave some padding
 
-    const maxCount = Math.max(auditData.done.count, auditData.received.count);
-    const doneHeight = maxCount ? (auditData.done.count / maxCount) * (height - padding * 2) : 0;
-    const receivedHeight = maxCount ? (auditData.received.count / maxCount) * (height - padding * 2) : 0;
+    const total = auditData.done.count + auditData.received.count;
+    
+    if (total === 0) {
+        // Show empty state
+        const emptyText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        emptyText.setAttribute('x', centerX);
+        emptyText.setAttribute('y', centerY);
+        emptyText.setAttribute('text-anchor', 'middle');
+        emptyText.setAttribute('alignment-baseline', 'middle');
+        emptyText.setAttribute('class', 'audit-label');
+        emptyText.textContent = 'No audit data';
+        svg.appendChild(emptyText);
+        return;
+    }
 
-    // Done bar
-    const doneBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    doneBar.setAttribute('x', padding);
-    doneBar.setAttribute('y', height - padding - doneHeight);
-    doneBar.setAttribute('width', barWidth);
-    doneBar.setAttribute('height', doneHeight);
-    doneBar.setAttribute('class', 'audit-bar');
-    doneBar.setAttribute('fill', 'var(--audit-done-color)');
+    // Calculate angles for pie slices
+    const doneAngle = (auditData.done.count / total) * 2 * Math.PI;
+    const receivedAngle = (auditData.received.count / total) * 2 * Math.PI;
 
-    // Received bar
-    const receivedBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    receivedBar.setAttribute('x', padding * 2 + barWidth);
-    receivedBar.setAttribute('y', height - padding - receivedHeight);
-    receivedBar.setAttribute('width', barWidth);
-    receivedBar.setAttribute('height', receivedHeight);
-    receivedBar.setAttribute('class', 'audit-bar');
-    receivedBar.setAttribute('fill', 'var(--audit-received-color)');
+    // Helper function to create pie slice path
+    function createPieSlice(startAngle, endAngle, radius, centerX, centerY) {
+        const x1 = centerX + radius * Math.cos(startAngle);
+        const y1 = centerY + radius * Math.sin(startAngle);
+        const x2 = centerX + radius * Math.cos(endAngle);
+        const y2 = centerY + radius * Math.sin(endAngle);
+        
+        const largeArcFlag = endAngle - startAngle <= Math.PI ? "0" : "1";
+        
+        return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+    }
 
-    // Labels
-    const doneLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    doneLabel.setAttribute('x', padding + barWidth/2);
-    doneLabel.setAttribute('y', height - padding/2);
-    doneLabel.setAttribute('text-anchor', 'middle');
-    doneLabel.setAttribute('class', 'audit-label');
-    doneLabel.textContent = `Done: ${auditData.done.count}`;
+    // Create pie slices
+    let currentAngle = -Math.PI / 2; // Start from top
 
-    const receivedLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    receivedLabel.setAttribute('x', padding * 2 + barWidth * 1.5);
-    receivedLabel.setAttribute('y', height - padding/2);
-    receivedLabel.setAttribute('text-anchor', 'middle');
-    receivedLabel.setAttribute('class', 'audit-label');
-    receivedLabel.textContent = `Received: ${auditData.received.count}`;
+    // Done slice
+    if (auditData.done.count > 0) {
+        const doneSlice = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const endAngle = currentAngle + doneAngle;
+        doneSlice.setAttribute('d', createPieSlice(currentAngle, endAngle, radius, centerX, centerY));
+        doneSlice.setAttribute('fill', 'var(--audit-done-color)');
+        doneSlice.setAttribute('class', 'pie-slice');
+        doneSlice.setAttribute('stroke', 'var(--background-color)');
+        doneSlice.setAttribute('stroke-width', '2');
+        svg.appendChild(doneSlice);
+        currentAngle = endAngle;
+    }
 
-    svg.appendChild(doneBar);
-    svg.appendChild(receivedBar);
-    svg.appendChild(doneLabel);
-    svg.appendChild(receivedLabel);
+    // Received slice
+    if (auditData.received.count > 0) {
+        const receivedSlice = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const endAngle = currentAngle + receivedAngle;
+        receivedSlice.setAttribute('d', createPieSlice(currentAngle, endAngle, radius, centerX, centerY));
+        receivedSlice.setAttribute('fill', 'var(--audit-received-color)');
+        receivedSlice.setAttribute('class', 'pie-slice');
+        receivedSlice.setAttribute('stroke', 'var(--background-color)');
+        receivedSlice.setAttribute('stroke-width', '2');
+        svg.appendChild(receivedSlice);
+    }
+
+    // Add center circle for donut effect (optional)
+    const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    centerCircle.setAttribute('cx', centerX);
+    centerCircle.setAttribute('cy', centerY);
+    centerCircle.setAttribute('r', radius * 0.4);
+    centerCircle.setAttribute('fill', 'var(--background-color)');
+    centerCircle.setAttribute('stroke', 'var(--text-color)');
+    centerCircle.setAttribute('stroke-width', '1');
+    svg.appendChild(centerCircle);
+
+    // Add center text showing ratio
+    const ratio = auditData.received.count > 0 ? (auditData.done.count / auditData.received.count).toFixed(2) : 'N/A';
+    const centerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    centerText.setAttribute('x', centerX);
+    centerText.setAttribute('y', centerY - 5);
+    centerText.setAttribute('text-anchor', 'middle');
+    centerText.setAttribute('alignment-baseline', 'middle');
+    centerText.setAttribute('class', 'audit-ratio-text');
+    centerText.setAttribute('font-size', '14');
+    centerText.setAttribute('font-weight', 'bold');
+    centerText.textContent = `Ratio: ${ratio}`;
+    svg.appendChild(centerText);
+
+    // Add legend
+    const legendY = height - 30;
+    const legendSpacing = 120;
+    const legendStartX = centerX - legendSpacing;
+
+    // Done legend
+    const doneRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    doneRect.setAttribute('x', legendStartX);
+    doneRect.setAttribute('y', legendY);
+    doneRect.setAttribute('width', '12');
+    doneRect.setAttribute('height', '12');
+    doneRect.setAttribute('fill', 'var(--audit-done-color)');
+    svg.appendChild(doneRect);
+
+    const doneText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    doneText.setAttribute('x', legendStartX + 18);
+    doneText.setAttribute('y', legendY + 9);
+    doneText.setAttribute('class', 'audit-label');
+    doneText.setAttribute('font-size', '12');
+    doneText.textContent = `Done: ${auditData.done.count}`;
+    svg.appendChild(doneText);
+
+    // Received legend
+    const receivedRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    receivedRect.setAttribute('x', legendStartX + legendSpacing);
+    receivedRect.setAttribute('y', legendY);
+    receivedRect.setAttribute('width', '12');
+    receivedRect.setAttribute('height', '12');
+    receivedRect.setAttribute('fill', 'var(--audit-received-color)');
+    svg.appendChild(receivedRect);
+
+    const receivedText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    receivedText.setAttribute('x', legendStartX + legendSpacing + 18);
+    receivedText.setAttribute('y', legendY + 9);
+    receivedText.setAttribute('class', 'audit-label');
+    receivedText.setAttribute('font-size', '12');
+    receivedText.textContent = `Received: ${auditData.received.count}`;
+    svg.appendChild(receivedText);
 }
 
 // Call fetchProfileData when the page loads
