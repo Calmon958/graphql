@@ -362,32 +362,10 @@ function generateGraphs() {
             points.push({ x, y });
         });
 
-        // Create gradient
-        const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-        gradient.setAttribute('id', 'xpLineGradient');
-        gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
-        gradient.setAttribute('x1', '0');
-        gradient.setAttribute('y1', '0');
-        gradient.setAttribute('x2', xpWidth.toString());
-        gradient.setAttribute('y2', '0');
-
-        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-        stop1.setAttribute('offset', '0%');
-        stop1.setAttribute('stop-color', 'var(--primary-color)');
-
-        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-        stop2.setAttribute('offset', '100%');
-        stop2.setAttribute('stop-color', 'var(--secondary-color)');
-
-        gradient.appendChild(stop1);
-        gradient.appendChild(stop2);
-        xpSvg.appendChild(gradient);
-
         // Add the line
         const xpLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         xpLine.setAttribute('d', path);
         xpLine.setAttribute('class', 'chart-line');
-        xpLine.setAttribute('stroke', 'url(#xpLineGradient)');
         xpSvg.appendChild(xpLine);
 
         // Add data points
