@@ -14,13 +14,15 @@ let piscineRustXP = [];
 
 async function fetchProfileData() {
     const jwt = localStorage.getItem('hasura_jwt_token');
+    const mainContent = document.querySelector('.dashboard-content');
 
     if (!jwt || jwt.split('.').length !== 3) {
-        console.error('Invalid JWT:', jwt);
-        alert('Invalid authentication token');
-        window.location.href = '/index.html';
+        handleAuthError('Invalid or missing authentication token. Please log in again.');
         return;
     }
+
+    // Show loading state
+    mainContent.innerHTML = '<div class="loading-spinner"></div>';
 
     const query = `
         query {
@@ -181,14 +183,33 @@ async function fetchProfileData() {
 
         const responseData = await response.json();
 
+        if (response.status === 401) {
+            handleAuthError('Your session has expired. Please log in again.');
+            return;
+        }
+
         if (responseData.errors) {
             console.error('GraphQL Errors:', responseData.errors);
             throw new Error(responseData.errors.map(err => err.message).join(', '));
         }
 
         if (!responseData.data) {
-            throw new Error('No data returned from GraphQL query');
+            throw new Error('No data returned from the server.');
         }
+
+        // Restore original content structure before populating
+        mainContent.innerHTML = `
+            <section class="key-metrics">
+                <div class="metric-card"><h3>User ID</h3><p id="user-id"></p></div>
+                <div class="metric-card"><h3>Username</h3><p id="username"></p></div>
+                <div class="metric-card"><h3>XP</h3><p id="xp"></p></div>
+            </section>
+            <section class="charts">
+                <div class="chart-container"><h3>XP Over Time</h3><svg id="xp-over-time" width="100%" height="200"></svg></div>
+                <div class="chart-container"><h3>Audit Ratios</h3><svg id="audit-ratios" width="100%" height="200"></svg></div>
+            </section>
+            <div class="profile-section"><h2>Skills</h2><div id="skills-container"></div></div>
+        `;
 
         // Initialize the XP arrays from the response
         moduleXP = responseData.data.moduleXP || [];
@@ -253,8 +274,19 @@ async function fetchProfileData() {
         generateGraphs();
     } catch (error) {
         console.error('Full Error:', error);
-        alert('Failed to fetch profile data: ' + error.message);
+        handleFetchError('Failed to fetch profile data. Please check your connection or try again later.');
     }
+}
+
+function handleAuthError(message) {
+    alert(message);
+    localStorage.removeItem('hasura_jwt_token');
+    window.location.href = '/index.html';
+}
+
+function handleFetchError(message) {
+    const mainContent = document.querySelector('.dashboard-content');
+    mainContent.innerHTML = `<div class="error-message">${message}</div>`;
 }
 
 function displaySkills(skills, skillSummary) {
