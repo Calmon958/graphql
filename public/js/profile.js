@@ -301,19 +301,76 @@ function displaySkills(skills, skillSummary) {
     }
 }
 
+function processXPData(transactions) {
+    if (!transactions || transactions.length === 0) {
+        return [];
+    }
+
+    const sorted = transactions.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    let cumulativeXP = 0;
+    return sorted.map(transaction => {
+        cumulativeXP += transaction.amount;
+        return {
+            date: new Date(transaction.createdAt),
+            xp: cumulativeXP
+        };
+    });
+}
+
 function generateGraphs() {
     const xpSvg = document.getElementById('xp-over-time');
+    if (!xpSvg) return;
+
     const xpWidth = xpSvg.clientWidth;
     const xpHeight = xpSvg.clientHeight;
     const padding = {
         left: 60,
         right: 20,
         top: 20,
-        bottom: 30
+        bottom: 50
     };
 
     // Clear previous content
     xpSvg.innerHTML = '';
+
+    // Combine all XP transactions into one array
+    const allXPTransactions = [
+        ...moduleXP,
+        ...piscineGoXP,
+        ...piscineJsXP,
+        ...piscineUxXP,
+        ...piscineUiXP,
+        ...piscineRustXP
+    ];
+
+    // Process the combined data
+    const combinedXpData = processXPData(allXPTransactions);
+
+    // Find the overall max XP and date range
+    let maxXP = 0;
+    let minDate = new Date();
+    let maxDate = new Date(0);
+    let hasData = false;
+
+    if (combinedXpData.length > 0) {
+        hasData = true;
+        maxXP = combinedXpData[combinedXpData.length - 1].xp;
+        minDate = combinedXpData[0].date;
+        maxDate = combinedXpData[combinedXpData.length - 1].date;
+    }
+
+    if (!hasData) {
+        // Handle no XP data case
+        const noDataText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        noDataText.setAttribute('x', xpWidth / 2);
+        noDataText.setAttribute('y', xpHeight / 2);
+        noDataText.setAttribute('text-anchor', 'middle');
+        noDataText.setAttribute('class', 'chart-label');
+        noDataText.textContent = 'No XP data available';
+        xpSvg.appendChild(noDataText);
+        return;
+    }
 
     // Add grid lines
     const gridLines = 5;
@@ -328,84 +385,63 @@ function generateGraphs() {
         xpSvg.appendChild(gridLine);
     }
 
-    // Process XP data
-    const sortedXP = [...moduleXP, ...piscineGoXP, ...piscineJsXP, ...piscineUxXP, ...piscineUiXP, ...piscineRustXP].sort((a, b) =>
-        new Date(a.createdAt) - new Date(b.createdAt)
-    );
-
-    if (sortedXP.length > 0) {
-        let cumulativeXP = 0;
-        const dataPoints = sortedXP.map(transaction => {
-            cumulativeXP += transaction.amount;
-            return {
-                date: new Date(transaction.createdAt),
-                xp: cumulativeXP
-            };
-        });
-
-        // Create XP line
-        const maxXP = dataPoints[dataPoints.length - 1].xp;
-        const minDate = dataPoints[0].date;
-        const maxDate = dataPoints[dataPoints.length - 1].date;
-
-        // Draw the line
+    // Draw a single line for combined XP
+    if (combinedXpData.length > 0) {
+        const dataPoints = combinedXpData;
         let path = 'M ';
-        const points = [];
         dataPoints.forEach((point, i) => {
             const x = padding.left + ((point.date - minDate) / (maxDate - minDate)) * (xpWidth - padding.left - padding.right);
             const y = padding.top + (xpHeight - padding.top - padding.bottom) - ((point.xp / maxXP) * (xpHeight - padding.top - padding.bottom));
             path += `${x},${y} `;
             if (i < dataPoints.length - 1) path += 'L ';
-            points.push({ x, y });
-        });
 
-        // Add the line
-        const xpLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        xpLine.setAttribute('d', path);
-        xpLine.setAttribute('class', 'chart-line');
-        xpSvg.appendChild(xpLine);
-
-        // Add data points
-        points.forEach((point) => {
+            // Add a circle for each data point
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', point.x.toString());
-            circle.setAttribute('cy', point.y.toString());
-            circle.setAttribute('r', '4');
-            circle.setAttribute('class', 'chart-point');
+            circle.setAttribute('cx', x);
+            circle.setAttribute('cy', y);
+            circle.setAttribute('r', 3); // radius of the dot
+            circle.setAttribute('fill', 'var(--chart-line-color)');
             xpSvg.appendChild(circle);
         });
 
-        // Add Y-axis labels
-        for (let i = 0; i <= gridLines; i++) {
-            const y = padding.top + (i / gridLines) * (xpHeight - padding.top - padding.bottom);
-            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            const value = ((gridLines - i) / gridLines * maxXP / (1000 * 1000)).toFixed(1);
-            label.setAttribute('x', padding.left - 10);
-            label.setAttribute('y', y);
-            label.setAttribute('text-anchor', 'end');
-            label.setAttribute('alignment-baseline', 'middle');
-            label.setAttribute('class', 'chart-label');
-            label.textContent = `${value} MB`;
-            xpSvg.appendChild(label);
-        }
-
-        // Add X-axis labels (start and end dates)
-        const startLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        startLabel.setAttribute('x', padding.left);
-        startLabel.setAttribute('y', xpHeight - padding.bottom / 2);
-        startLabel.setAttribute('class', 'chart-label');
-        startLabel.textContent = minDate.toLocaleDateString();
-
-        const endLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        endLabel.setAttribute('x', xpWidth - padding.right);
-        endLabel.setAttribute('y', xpHeight - padding.bottom / 2);
-        endLabel.setAttribute('text-anchor', 'end');
-        endLabel.setAttribute('class', 'chart-label');
-        endLabel.textContent = maxDate.toLocaleDateString();
-
-        xpSvg.appendChild(startLabel);
-        xpSvg.appendChild(endLabel);
+        const xpLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        xpLine.setAttribute('d', path);
+        xpLine.setAttribute('class', 'chart-line');
+        xpLine.setAttribute('stroke', 'var(--chart-line-color)');
+        xpLine.setAttribute('stroke-dasharray', '5,5'); // for dotted line
+        xpSvg.appendChild(xpLine);
     }
+
+
+    // Add Y-axis labels
+    for (let i = 0; i <= gridLines; i++) {
+        const y = padding.top + (i / gridLines) * (xpHeight - padding.top - padding.bottom);
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        const value = ((gridLines - i) / gridLines * maxXP / (1000 * 1000)).toFixed(1);
+        label.setAttribute('x', padding.left - 10);
+        label.setAttribute('y', y);
+        label.setAttribute('text-anchor', 'end');
+        label.setAttribute('alignment-baseline', 'middle');
+        label.setAttribute('class', 'chart-label');
+        label.textContent = `${value} MB`;
+        xpSvg.appendChild(label);
+    }
+
+    // Add X-axis labels
+    const startLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    startLabel.setAttribute('x', padding.left);
+    startLabel.setAttribute('y', xpHeight - padding.bottom + 20);
+    startLabel.setAttribute('class', 'chart-label');
+    startLabel.textContent = minDate.toLocaleDateString();
+    xpSvg.appendChild(startLabel);
+
+    const endLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    endLabel.setAttribute('x', xpWidth - padding.right);
+    endLabel.setAttribute('y', xpHeight - padding.bottom + 20);
+    endLabel.setAttribute('text-anchor', 'end');
+    endLabel.setAttribute('class', 'chart-label');
+    endLabel.textContent = maxDate.toLocaleDateString();
+    xpSvg.appendChild(endLabel);
 }
 
 function updateAuditRatios(auditData) {
